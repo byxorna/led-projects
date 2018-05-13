@@ -20,7 +20,7 @@ typedef void (*FP)();
 #define UPDATES_PER_SECOND 240
 #define MAX_BRIGHTNESS 255
 #define MAX_SATURATION 255
-#define BOOTUP_ANIM_DURATION_MS 1000
+#define BOOTUP_ANIM_DURATION_MS 2000
 #define PATTERN_CHANGE_INTERVAL_MS 60000
 #define PALETTE_CHANGE_INTERVAL_MS 30000
 #define AUTO_CHANGE_PALETTE 1
@@ -87,7 +87,7 @@ void setup() {
   Serial.println("booted up");
 }
 
-void pattern_slow_pulse() {
+void pattern_slow_pulse_with_sparkles() {
   // pick a color, and pulse it 
   uint8_t cBrightness = beatsin8(20, 120, 255);
   uint8_t cHue = beatsin8(4, 0, 255);
@@ -95,7 +95,11 @@ void pattern_slow_pulse() {
   CRGB rgb_led;
   hsv2rgb_rainbow(hsv_led, rgb_led);
   for( int i = 0; i < NUM_LEDS; i++) {
-    leds[i] = rgb_led;
+    if (random(NUM_LEDS*3) == 0) {
+      leds[i] = CRGB::White;
+    } else {
+      leds[i] = rgb_led;
+    }
   }
 }
 
@@ -122,26 +126,34 @@ void pattern_cylon_eye() {
   }
 }
 
-void pattern_bootup() {
+void pattern_bootup_with_sparkles() {
   uint8_t baseHue = beatsin8(15, 0, 255);
   uint8_t iHue = 0;
   for(int i = 0; i < NUM_LEDS; ++i) {
-    iHue = addmod8(baseHue, 1, 255);
-    CHSV hsv_led = CHSV(iHue, 255, 255);
-    CRGB rgb_led;
-    hsv2rgb_rainbow(hsv_led, rgb_led);
-    leds[i] = rgb_led;
+    if (random(NUM_LEDS) == 0) {
+      leds[i] = CRGB::White;
+    } else {
+      iHue = addmod8(baseHue, 1, 255);
+      CHSV hsv_led = CHSV(iHue, 255, 255);
+      CRGB rgb_led;
+      hsv2rgb_rainbow(hsv_led, rgb_led);
+      leds[i] = rgb_led;
+    }
   }
 }
 
 // cycle a rainbow, varying how quickly it rolls around the board
-void pattern_rainbow_waves() {
+void pattern_rainbow_waves_with_sparkles() {
   for(int i = 0; i < NUM_LEDS; ++i) {
-    uint8_t h = (t_now/12+i)%256;
-    CHSV hsv_led = CHSV(h, 255, 255);
-    CRGB rgb_led;
-    hsv2rgb_rainbow(hsv_led, rgb_led);
-    leds[i] = rgb_led;
+    if (random(NUM_LEDS*3) == 0) {
+      leds[i] = CRGB::White;
+    } else {
+      uint8_t h = (t_now/12+i)%256;
+      CHSV hsv_led = CHSV(h, 255, 255);
+      CRGB rgb_led;
+      hsv2rgb_rainbow(hsv_led, rgb_led);
+      leds[i] = rgb_led;
+    }
   }
 }
 
@@ -223,10 +235,10 @@ void pattern_palette_waves() {
 /** update this with patterns you want to be cycled through **/
 #define NUM_PATTERNS sizeof(patternBank) / sizeof(FP)
 const FP patternBank[] = {
-  //&pattern_from_palette,
-  &pattern_slow_pulse,
+  &pattern_from_palette,
+  &pattern_slow_pulse_with_sparkles,
   &pattern_palette_waves,
-  &pattern_rainbow_waves,
+  &pattern_rainbow_waves_with_sparkles,
 };
 
 void loop() {
@@ -289,7 +301,7 @@ void loop() {
 
   if (t_boot + BOOTUP_ANIM_DURATION_MS > t_now) {
     // display a bootup pattern for a bit
-    pattern_bootup();
+    pattern_bootup_with_sparkles();
   } else {
     if (gPattern < NUM_PATTERNS) {
       patternBank[gPattern]();
