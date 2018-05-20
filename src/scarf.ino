@@ -10,11 +10,11 @@
 
 FASTLED_USING_NAMESPACE;
 SYSTEM_MODE(SEMI_AUTOMATIC);
-SYSTEM_THREAD(ENABLED);
+// SYSTEM_THREAD(ENABLED);
 
 typedef void (*FP)();
 
-#define NUM_LEDS 83
+#define NUM_LEDS 102
 #define LEDS_PIN D6
 #define LED_TYPE NEOPIXEL
 #define UPDATES_PER_SECOND 240
@@ -64,6 +64,9 @@ CRGBPalette16 palettes[6] = {
   OceanColors_p,
   LavaColors_p,
 };
+
+// hardcode a disorient palette here so we can use it for other dealies
+CRGBPalette16 DisorientPalette = palettes[0];
 
 TBlendType currentBlending = LINEARBLEND;
 CRGB leds[NUM_LEDS];
@@ -162,6 +165,22 @@ void pattern_clear() {
     leds[i] = CRGB::Black;
   }
 }
+
+void pattern_disorient_palette_sparkles() {
+  uint8_t b = beatsin8(4, 0, 255);
+  for( int i = 0; i < NUM_LEDS; i++) {
+    if (random(NUM_LEDS*4) == 0) {
+      leds[i] = CRGB::White;
+    } else {
+      leds[i] = ColorFromPalette(DisorientPalette, gAnimIndex + i + b, MAX_BRIGHTNESS, currentBlending);
+    }
+  }
+  // slow down progression by 1/3
+  if (t_now%3 == 0) {
+    gAnimIndex = addmod8(gAnimIndex, 1, 255);
+  }
+}
+
 void pattern_from_palette() {
   uint8_t b = beatsin8(4, 0, 255);
   for( int i = 0; i < NUM_LEDS; i++) {
@@ -236,6 +255,7 @@ void pattern_palette_waves() {
 #define NUM_PATTERNS sizeof(patternBank) / sizeof(FP)
 const FP patternBank[] = {
   &pattern_from_palette,
+  &pattern_disorient_palette_sparkles,
   &pattern_slow_pulse_with_sparkles,
   &pattern_palette_waves,
   &pattern_rainbow_waves_with_sparkles,
@@ -276,6 +296,7 @@ void loop() {
     AUTO_PATTERN_CHANGE = false;
     ++gPattern;
     button_state = 3;
+    Serial.println("moving to fixed pattern mode (use button to change)");
   }
 
   // TODO: make sure patterns and pallettes change together
