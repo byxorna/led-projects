@@ -17,7 +17,7 @@ typedef void (*FP)();
 #define NUM_LEDS 102
 #define LEDS_PIN D6
 #define LED_TYPE NEOPIXEL
-#define UPDATES_PER_SECOND 240
+#define UPDATES_PER_SECOND 120
 #define MAX_BRIGHTNESS 255
 #define MAX_SATURATION 255
 #define BOOTUP_ANIM_DURATION_MS 2000
@@ -54,6 +54,15 @@ DEFINE_GRADIENT_PALETTE( Disorient_gp ) {
     208, 255, 111,  15,    // orange
     255, 255, 255, 255, }; // white
 
+DEFINE_GRADIENT_PALETTE( Disorient_Dark_gp ) {
+     0,  255,  26, 153,    // pink
+     50,   0,   0,   0,    // black
+    100, 255,  255,  255,  // white
+    150,   0,   0,   0,    // black
+    200, 255, 111,  15,    // orange
+    255,   0,   0,   0, }; // black
+
+
 // for effects that are palette based
 CRGBPalette16 currentPalette; // current color palette
 CRGBPalette16 palettes[6] = {
@@ -65,8 +74,6 @@ CRGBPalette16 palettes[6] = {
   LavaColors_p,
 };
 
-// hardcode a disorient palette here so we can use it for other dealies
-CRGBPalette16 DisorientPalette = palettes[0];
 
 TBlendType currentBlending = LINEARBLEND;
 CRGB leds[NUM_LEDS];
@@ -172,7 +179,7 @@ void pattern_disorient_palette_sparkles() {
     if (random(NUM_LEDS*4) == 0) {
       leds[i] = CRGB::White;
     } else {
-      leds[i] = ColorFromPalette(DisorientPalette, gAnimIndex + i + b, MAX_BRIGHTNESS, currentBlending);
+      leds[i] = ColorFromPalette((CRGBPalette16)Disorient_gp, gAnimIndex + i + b, MAX_BRIGHTNESS, currentBlending);
     }
   }
   // slow down progression by 1/3
