@@ -25,7 +25,7 @@ typedef void (*FP)();
 #define PALETTE_CHANGE_INTERVAL_MS 30000
 #define AUTO_CHANGE_PALETTE 1
 bool AUTO_PATTERN_CHANGE = true;
-#define GLOBAL_BRIGHTNESS 255
+#define GLOBAL_BRIGHTNESS 80
 #define SETUP_BUTTON_HOLD_DURATION_MS 800
 
 uint8_t gPattern = 0; // global pattern
