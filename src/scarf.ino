@@ -409,8 +409,13 @@ void loop() {
     return;
   } else {
     // fill in patterns on both decks! we will crossfade master output later
-    patternBank[deckSettingsA.gPattern](deckA, &deckSettingsA);
-    patternBank[deckSettingsB.gPattern](deckB, &deckSettingsB);
+    // NOTE: only render to a deck if its "visible" through the crossfader
+    if (crossfadePosition < 1.0 || shouldCrossfade) {
+      patternBank[deckSettingsA.gPattern](deckA, &deckSettingsA);
+    }
+    if (crossfadePosition > 0 || shouldCrossfade) {
+      patternBank[deckSettingsB.gPattern](deckB, &deckSettingsB);
+    }
   }
 
   // perform crossfading increment if we are mid pattern change

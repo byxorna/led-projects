@@ -69,6 +69,7 @@ To enter DFU Mode:
 
 * [ ] add a double buffering system for changing how crossfades work between patterns
 * [ ] setup new pattern that waves intensity, color, and color offset entirely with noise generators
+* [x] make non-active deck not get a pattern computed when not crossfading
 * [ ] tweak brightness and pattern FPS
 * [x] setup new pattern that waves intensity, color, and color offset into the color wave
 
