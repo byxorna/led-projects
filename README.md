@@ -65,6 +65,12 @@ To enter DFU Mode:
 - Release the MODE button
 - The Core now is in the DFU mode.
 
+## TODO
+
+* [ ] add a double buffering system for changing how crossfades work between patterns
+* [ ] setup new pattern that waves intensity, color, and color offset entirely with noise generators
+* [x] setup new pattern that waves intensity, color, and color offset into the color wave
+
 ## Ideas
 
 ### mesh timing protocol

@@ -188,6 +188,22 @@ void pattern_disorient_palette_sparkles() {
   }
 }
 
+// undulates a color wave, an offset into that wave, and intensity of the led
+void pattern_time_stretch_waves_rainbow(){
+  float speedIntensity = 1.0;
+  float speedColor = 1.0;
+  for( int i = 0; i < NUM_LEDS; i++) {
+    uint8_t intensity = cos8((t_now + i) * speedIntensity);
+    uint8_t stretchOffset = map8( inoise8((t_now + i)), 0, 16);
+    uint8_t hue = (t_now / (speedColor * 12) + (i + stretchOffset));
+
+    CRGB rgb_led;
+    CHSV hsv_led = CHSV(hue, 255, intensity);
+    hsv2rgb_rainbow(hsv_led, rgb_led);
+    leds[i] = rgb_led;
+  }
+}
+
 void pattern_from_palette() {
   uint8_t b = beatsin8(4, 0, 255);
   for( int i = 0; i < NUM_LEDS; i++) {
@@ -261,6 +277,7 @@ void pattern_palette_waves() {
 /** update this with patterns you want to be cycled through **/
 #define NUM_PATTERNS sizeof(patternBank) / sizeof(FP)
 const FP patternBank[] = {
+  &pattern_time_stretch_waves_rainbow,
   &pattern_from_palette,
   &pattern_disorient_palette_sparkles,
   &pattern_slow_pulse_with_sparkles,
