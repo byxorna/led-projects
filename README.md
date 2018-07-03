@@ -69,6 +69,7 @@ To enter DFU Mode:
 
 * [ ] add a double buffering system for changing how crossfades work between patterns
 * [ ] setup new pattern that waves intensity, color, and color offset entirely with noise generators
+* [ ] tweak brightness and pattern FPS
 * [x] setup new pattern that waves intensity, color, and color offset into the color wave
 
 ## Ideas

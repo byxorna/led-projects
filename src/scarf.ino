@@ -12,7 +12,21 @@ FASTLED_USING_NAMESPACE;
 SYSTEM_MODE(SEMI_AUTOMATIC);
 // SYSTEM_THREAD(ENABLED);
 
-typedef void (*FP)();
+struct DeckSettings {
+  char label;
+  uint8_t gPattern;
+  uint8_t gPalette;
+  uint8_t gAnimIndex;
+  CRGBPalette16 currentPalette; // current color palette
+  unsigned long t_pattern_start;  // time last pattern changed
+  unsigned long t_palette_start;  // time last palette changed
+};
+
+DeckSettings deckSettingsA;
+DeckSettings deckSettingsB;
+DeckSettings deckSettingsAll[] = {deckSettingsA, deckSettingsB};
+
+typedef void (*FP)(NSFastLED::CRGB*, DeckSettings*);
 
 #define NUM_LEDS 102
 #define LEDS_PIN D6
@@ -21,21 +35,20 @@ typedef void (*FP)();
 #define MAX_BRIGHTNESS 255
 #define MAX_SATURATION 255
 #define BOOTUP_ANIM_DURATION_MS 2000
-#define PATTERN_CHANGE_INTERVAL_MS 60000
+#define PATTERN_CHANGE_INTERVAL_MS 30000
 #define PALETTE_CHANGE_INTERVAL_MS 30000
 #define AUTO_CHANGE_PALETTE 1
 bool AUTO_PATTERN_CHANGE = true;
 #define GLOBAL_BRIGHTNESS 80
 #define SETUP_BUTTON_HOLD_DURATION_MS 800
-
-uint8_t gPattern = 0; // global pattern
-uint8_t gPalette = 0; // global palette
-uint8_t gAnimIndex = 0; // animation index for ColorFromPalette
+#define VJ_CROSSFADE_DURATION_MS 5000
+#define VJ_DECK_B_PATTERN_INDEX_OFFSET 3
+#define VJ_DECK_B_PALETTE_INDEX_OFFSET 2
 
 unsigned long t_now;                // time now in each loop iteration
 unsigned long t_boot;               // time at bootup
-unsigned long t_pattern_start = 0;  // time last pattern changed
-unsigned long t_palette_start = 0;  // time last palette changed
+//unsigned long t_pattern_start = 0;  // time last pattern changed
+//unsigned long t_palette_start = 0;  // time last palette changed
 
 /* state for controlling user-mode button for pattern changes */
 uint8_t button_state = 0;
@@ -64,7 +77,6 @@ DEFINE_GRADIENT_PALETTE( Disorient_Dark_gp ) {
 
 
 // for effects that are palette based
-CRGBPalette16 currentPalette; // current color palette
 CRGBPalette16 palettes[6] = {
   Disorient_gp,
   RainbowColors_p,
@@ -76,28 +88,14 @@ CRGBPalette16 palettes[6] = {
 
 
 TBlendType currentBlending = LINEARBLEND;
-CRGB leds[NUM_LEDS];
+CRGB masterOutput[NUM_LEDS];
+CRGB deckA[NUM_LEDS];
+CRGB deckB[NUM_LEDS];
+long crossfadePosition = 0.0;  // 0.0 is deckA, 1.0 is deckB
+int crossfadeDirection = 1.0;
+bool shouldCrossfade = false;
 
-// setup() runs once, when the device is first turned on.
-void setup() {
-
-  Serial.begin(9600);
-  Serial.println("resetting");
-
-  currentPalette = palettes[0];
-
-  // led controller, data pin, clock pin, RGB type (RGB is already defined in particle)
-  gLED = new CFastLED();
-  gLED->addLeds<LED_TYPE, LEDS_PIN>(leds, NUM_LEDS);
-  gLED->setBrightness(GLOBAL_BRIGHTNESS);
-  pattern_clear();
-  gLED->show();
-
-  t_boot = millis();
-  Serial.println("booted up");
-}
-
-void pattern_slow_pulse_with_sparkles() {
+void pattern_slow_pulse_with_sparkles(NSFastLED::CRGB* leds, DeckSettings* s) {
   // pick a color, and pulse it 
   uint8_t cBrightness = beatsin8(20, 120, 255);
   uint8_t cHue = beatsin8(4, 0, 255);
@@ -113,7 +111,7 @@ void pattern_slow_pulse_with_sparkles() {
   }
 }
 
-void pattern_cylon_eye() {
+void pattern_cylon_eye(NSFastLED::CRGB* leds, DeckSettings* s) {
   // cylon eye is 4 pixels wide, +/++ base index
   // we map a 60bpm(1s) cycle into 0..num leds-1
   uint8_t h = beatsin8(8, 0, 255);
@@ -136,7 +134,7 @@ void pattern_cylon_eye() {
   }
 }
 
-void pattern_bootup_with_sparkles() {
+void pattern_bootup_with_sparkles(NSFastLED::CRGB* leds, DeckSettings* s) {
   uint8_t baseHue = beatsin8(15, 0, 255);
   uint8_t iHue = 0;
   for(int i = 0; i < NUM_LEDS; ++i) {
@@ -153,7 +151,7 @@ void pattern_bootup_with_sparkles() {
 }
 
 // cycle a rainbow, varying how quickly it rolls around the board
-void pattern_rainbow_waves_with_sparkles() {
+void pattern_rainbow_waves_with_sparkles(NSFastLED::CRGB* leds, DeckSettings* s) {
   for(int i = 0; i < NUM_LEDS; ++i) {
     if (random(NUM_LEDS*3) == 0) {
       leds[i] = CRGB::White;
@@ -167,29 +165,29 @@ void pattern_rainbow_waves_with_sparkles() {
   }
 }
 
-void pattern_clear() {
+void pattern_clear(NSFastLED::CRGB* leds) {
   for( int i = 0; i < NUM_LEDS; i++) {
     leds[i] = CRGB::Black;
   }
 }
 
-void pattern_disorient_palette_sparkles() {
+void pattern_disorient_palette_sparkles(NSFastLED::CRGB* leds, DeckSettings* s) {
   uint8_t b = beatsin8(4, 0, 255);
   for( int i = 0; i < NUM_LEDS; i++) {
     if (random(NUM_LEDS*4) == 0) {
       leds[i] = CRGB::White;
     } else {
-      leds[i] = ColorFromPalette((CRGBPalette16)Disorient_gp, gAnimIndex + i + b, MAX_BRIGHTNESS, currentBlending);
+      leds[i] = ColorFromPalette((CRGBPalette16)Disorient_gp, s->gAnimIndex + i + b, MAX_BRIGHTNESS, currentBlending);
     }
   }
   // slow down progression by 1/3
   if (t_now%3 == 0) {
-    gAnimIndex = addmod8(gAnimIndex, 1, 255);
+    s->gAnimIndex = addmod8(s->gAnimIndex, 1, 255);
   }
 }
 
 // undulates a color wave, an offset into that wave, and intensity of the led
-void pattern_time_stretch_waves_rainbow(){
+void pattern_time_stretch_waves_rainbow(NSFastLED::CRGB* leds, DeckSettings* s){
   float speedIntensity = 1.0;
   float speedColor = 1.0;
   for( int i = 0; i < NUM_LEDS; i++) {
@@ -204,18 +202,18 @@ void pattern_time_stretch_waves_rainbow(){
   }
 }
 
-void pattern_from_palette() {
+void pattern_from_palette(NSFastLED::CRGB* leds, DeckSettings* s) {
   uint8_t b = beatsin8(4, 0, 255);
   for( int i = 0; i < NUM_LEDS; i++) {
-    leds[i] = ColorFromPalette(currentPalette, gAnimIndex + i + b, MAX_BRIGHTNESS, currentBlending);
+    leds[i] = ColorFromPalette(s->currentPalette, s->gAnimIndex + i + b, MAX_BRIGHTNESS, currentBlending);
   }
   // slow down progression by 1/3
   if (t_now%3 == 0) {
-    gAnimIndex = addmod8(gAnimIndex, 1, 255);
+    s->gAnimIndex = addmod8(s->gAnimIndex, 1, 255);
   }
 }
 
-void pattern_brake_light() {
+void pattern_brake_light(NSFastLED::CRGB* leds, DeckSettings* s) {
   for (int i = 0; i < NUM_LEDS; ++i) {
     leds[i] = CRGB::Red;
   }
@@ -224,7 +222,7 @@ void pattern_brake_light() {
 // NOTE: lifted and tweaked from https://learn.adafruit.com/rainbow-chakra-led-hoodie/the-code
 // This function draws color waves with an ever-changing,
 // widely-varying set of parameters, using a color palette.
-void pattern_palette_waves() {
+void pattern_palette_waves(NSFastLED::CRGB* leds, DeckSettings* s) {
   uint8_t numleds = NUM_LEDS;
   static uint16_t sPseudotime = 0;
   static uint16_t sLastMillis = 0;
@@ -265,13 +263,53 @@ void pattern_palette_waves() {
     uint8_t index = hue8;
     index = scale8( index, 240);
 
-    CRGB newcolor = ColorFromPalette(currentPalette, index, bri8);
+    CRGB newcolor = ColorFromPalette(s->currentPalette, index, bri8);
 
     uint16_t pixelnumber = i;
     pixelnumber = (numleds-1) - pixelnumber;
 
     nblend(leds[pixelnumber], newcolor, 128);
   }
+}
+
+// setup() runs once, when the device is first turned on.
+void setup() {
+  t_boot = millis();
+  Serial.begin(9600);
+  Serial.println("resetting");
+
+  deckSettingsA = {
+    'a',
+    0,
+    0,
+    0,
+    palettes[0],
+    0,
+    0,
+  };
+  deckSettingsB = {
+    'b',
+    VJ_DECK_B_PATTERN_INDEX_OFFSET,
+    VJ_DECK_B_PALETTE_INDEX_OFFSET,
+    0,
+    palettes[VJ_DECK_B_PALETTE_INDEX_OFFSET],
+    0,
+    0,
+  };
+
+
+
+  // led controller, data pin, clock pin, RGB type (RGB is already defined in particle)
+  gLED = new CFastLED();
+  gLED->addLeds<LED_TYPE, LEDS_PIN>(masterOutput, NUM_LEDS);
+  gLED->setBrightness(GLOBAL_BRIGHTNESS);
+  pattern_clear(masterOutput);
+  // NOTE: deckA and deckB are only used to perform crossfaded transitions
+  pattern_clear(deckA);
+  pattern_clear(deckB);
+  gLED->show();
+
+  Serial.println("booted up");
 }
 
 /** update this with patterns you want to be cycled through **/
@@ -318,41 +356,88 @@ void loop() {
   if (button_state == 2) {
     // disable auto pattern changing now!
     AUTO_PATTERN_CHANGE = false;
-    ++gPattern;
+    deckSettingsA.gPattern++;
+    deckSettingsB.gPattern++;
     button_state = 3;
     Serial.println("moving to fixed pattern mode (use button to change)");
   }
 
-  // TODO: make sure patterns and pallettes change together
-  // increment pattern every PATTERN_CHANGE_INTERVAL_MS
-  if (AUTO_PATTERN_CHANGE) {
-    if (t_now > t_pattern_start+PATTERN_CHANGE_INTERVAL_MS) {
-      gPattern++;
-      t_pattern_start = t_now;
-      Serial.printlnf("auto pattern->%d", gPattern);
+  // increment pattern every PATTERN_CHANGE_INTERVAL_MS, but not when a deck is active!
+  if (AUTO_PATTERN_CHANGE && !shouldCrossfade) {
+    if (t_now > deckSettingsA.t_pattern_start+PATTERN_CHANGE_INTERVAL_MS) {
+      if (crossfadePosition == 1.0) {
+        deckSettingsA.gPattern++;
+        deckSettingsA.t_pattern_start = t_now;
+        if (deckSettingsA.gPattern >= NUM_PATTERNS) {
+          deckSettingsA.gPattern = 0;
+        }
+        Serial.printlnf("deckA.pattern=%d", deckSettingsA.gPattern);
+      }
+    }
+    if (t_now > deckSettingsB.t_pattern_start+PATTERN_CHANGE_INTERVAL_MS) {
+      if (crossfadePosition == 0.0) {
+        deckSettingsB.gPattern++;
+        deckSettingsB.t_pattern_start = t_now;
+        if (deckSettingsB.gPattern >= NUM_PATTERNS) {
+          deckSettingsB.gPattern = 0;
+        }
+        Serial.printlnf("deckB.pattern=%d", deckSettingsB.gPattern);
+      }
     }
   }
 
-  // increment palette every PALETTE_CHANGE_INTERVAL_MS
-  if (AUTO_CHANGE_PALETTE && (t_now > t_palette_start+PALETTE_CHANGE_INTERVAL_MS)) {
-    gPalette++;
-    if (gPalette >= (sizeof(palettes)/sizeof(*palettes))) {
-      gPalette = 0;
+  // increment palette every PALETTE_CHANGE_INTERVAL_MS, but not when crossfading!
+  if (AUTO_CHANGE_PALETTE && !shouldCrossfade) {
+    for (int x = 0; x < sizeof(deckSettingsAll)/sizeof(DeckSettings) ; x++){
+      DeckSettings deck = deckSettingsAll[x];
+      if (t_now > deck.t_palette_start + PALETTE_CHANGE_INTERVAL_MS) {
+        deck.gPalette++;
+        if (deck.gPalette >= (sizeof(palettes)/sizeof(*palettes))) {
+          deck.gPalette = 0;
+        }
+        deck.currentPalette = palettes[deck.gPalette];
+        Serial.printlnf("deck%s.palette=%d", deck.label, deck.gPalette);
+        deck.t_palette_start = t_now;
+      }
     }
-    currentPalette = palettes[gPalette];
-    Serial.printlnf("palette->%d", gPalette);
-    t_palette_start = t_now;
   }
 
   if (t_boot + BOOTUP_ANIM_DURATION_MS > t_now) {
     // display a bootup pattern for a bit
-    pattern_bootup_with_sparkles();
+    pattern_bootup_with_sparkles(masterOutput, &deckSettingsA);
+    // NOTE: we dont want to run any crossfade routines while booting
+    return;
   } else {
-    if (gPattern < NUM_PATTERNS) {
-      patternBank[gPattern]();
-    } else {
-      gPattern = 0;
+    // fill in patterns on both decks! we will crossfade master output later
+    patternBank[deckSettingsA.gPattern](deckA, &deckSettingsA);
+    patternBank[deckSettingsB.gPattern](deckB, &deckSettingsB);
+  }
+
+  // perform crossfading increment if we are mid pattern change
+  if (shouldCrossfade) {
+    float step = VJ_CROSSFADE_DURATION_MS/1000/UPDATES_PER_SECOND;
+    crossfadePosition += crossfadeDirection * step;
+
+    // is it time to change decks?
+    // we are cut over to deck B, break this loop
+    if (crossfadePosition > 1.0) {
+      crossfadePosition = 1.0;
+      crossfadeDirection = -1; // 1->0
+      shouldCrossfade = false;
     }
+    // we are cut over to deck B
+    if (crossfadePosition < 0.0) {
+      crossfadePosition = 0.0;
+      crossfadeDirection = 1;  // 0->1
+      shouldCrossfade = false;
+    }
+  }
+
+  // perform crossfading between deckA and deckB, by filling masterOutput
+  // FIXME for now, lets just take a linear interpolation between deck a and b
+  for (int i = 0; i < NUM_LEDS; ++i) {
+    //masterOutput[i] = deckA[i].lerp8(deckB[i], fract8(255*crossfadePosition));
+    masterOutput[i] = deckA[i];
   }
 
   gLED->show();
