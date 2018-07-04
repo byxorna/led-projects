@@ -37,6 +37,8 @@ typedef void (*FP)(NSFastLED::CRGB*, DeckSettings*);
 #define BOOTUP_ANIM_DURATION_MS 2000
 #define PATTERN_CHANGE_INTERVAL_MS 30000
 #define PALETTE_CHANGE_INTERVAL_MS 30000
+// switch between deck a and b with this interval
+#define VJ_DECK_SWITCH_INTERVAL_MS 30000
 #define AUTO_CHANGE_PALETTE 1
 bool AUTO_PATTERN_CHANGE = true;
 #define GLOBAL_BRIGHTNESS 80
@@ -92,9 +94,10 @@ TBlendType currentBlending = LINEARBLEND;
 CRGB masterOutput[NUM_LEDS];
 CRGB deckA[NUM_LEDS];
 CRGB deckB[NUM_LEDS];
-long crossfadePosition = 0.0;  // 0.0 is deckA, 1.0 is deckB
-int crossfadeDirection = 1.0;
+long crossfadePosition = 1.0;  // 0.0 is deckA, 1.0 is deckB
+int crossfadeDirection = -1; // start going B -> A
 bool crossfadeInProgress = false;
+unsigned long tLastCrossfade = 0;
 
 void pattern_slow_pulse_with_sparkles(NSFastLED::CRGB* leds, DeckSettings* s) {
   // pick a color, and pulse it 
@@ -411,45 +414,47 @@ void loop() {
   } else {
     // fill in patterns on both decks! we will crossfade master output later
     // NOTE: only render to a deck if its "visible" through the crossfader
-    if (
-      !VJ_CROSSFADING_ENABLED ||
-      ( crossfadePosition < 1.0 || crossfadeInProgress)
-    ) {
+    if ( !VJ_CROSSFADING_ENABLED || crossfadePosition < 1.0 ) {
       patternBank[deckSettingsA.gPattern](deckA, &deckSettingsA);
     }
-    if (
-      VJ_CROSSFADING_ENABLED &&
-      ( crossfadePosition > 0 || crossfadeInProgress )
-    ) {
+    if ( VJ_CROSSFADING_ENABLED && crossfadePosition > 0 ) {
       patternBank[deckSettingsB.gPattern](deckB, &deckSettingsB);
     }
   }
 
   // perform crossfading increment if we are mid pattern change
-  if (VJ_CROSSFADING_ENABLED && crossfadeInProgress) {
-    float step = VJ_CROSSFADE_DURATION_MS/1000/UPDATES_PER_SECOND;
-    crossfadePosition += crossfadeDirection * step;
-
-    // is it time to change decks?
-    // we are cut over to deck B, break this loop
-    if (crossfadePosition > 1.0) {
-      crossfadePosition = 1.0;
-      crossfadeDirection = -1; // 1->0
-      crossfadeInProgress = false;
+  if (VJ_CROSSFADING_ENABLED) {
+    if (t_now > tLastCrossfade + VJ_DECK_SWITCH_INTERVAL_MS && !crossfadeInProgress) {
+      // start switching between decks
+      crossfadeInProgress = true;
+      tLastCrossfade = t_now;
     }
-    // we are cut over to deck B
-    if (crossfadePosition < 0.0) {
-      crossfadePosition = 0.0;
-      crossfadeDirection = 1;  // 0->1
-      crossfadeInProgress = false;
+    if (crossfadeInProgress) {
+      float step = VJ_CROSSFADE_DURATION_MS/1000/UPDATES_PER_SECOND;
+      crossfadePosition += crossfadeDirection * step;
+
+      // is it time to change decks?
+      // we are cut over to deck B, break this loop
+      if (crossfadePosition > 1.0) {
+        crossfadePosition = 1.0;
+        crossfadeDirection = -1; // 1->0
+        crossfadeInProgress = false;
+      }
+      // we are cut over to deck B
+      if (crossfadePosition < 0.0) {
+        crossfadePosition = 0.0;
+        crossfadeDirection = 1;  // 0->1
+        crossfadeInProgress = false;
+      }
     }
   }
 
   // perform crossfading between deckA and deckB, by filling masterOutput
   // FIXME for now, lets just take a linear interpolation between deck a and b
   for (int i = 0; i < NUM_LEDS; ++i) {
-    if (VJ_CROSSFADING_ENABLED && crossfadeInProgress) {
-      masterOutput[i] = deckA[i].lerp8(deckB[i], fract8(255*crossfadePosition));
+    if (VJ_CROSSFADING_ENABLED) {
+      //masterOutput[i] = deckA[i].lerp8(deckB[i], fract8(255*crossfadePosition));
+      masterOutput[i] = deckA[i];
     } else {
       masterOutput[i] = deckA[i];
     }
