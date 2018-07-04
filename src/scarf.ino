@@ -41,6 +41,7 @@ typedef void (*FP)(NSFastLED::CRGB*, DeckSettings*);
 bool AUTO_PATTERN_CHANGE = true;
 #define GLOBAL_BRIGHTNESS 80
 #define SETUP_BUTTON_HOLD_DURATION_MS 800
+#define VJ_CROSSFADING_ENABLED false
 #define VJ_CROSSFADE_DURATION_MS 5000
 #define VJ_DECK_B_PATTERN_INDEX_OFFSET 3
 #define VJ_DECK_B_PALETTE_INDEX_OFFSET 2
@@ -93,7 +94,7 @@ CRGB deckA[NUM_LEDS];
 CRGB deckB[NUM_LEDS];
 long crossfadePosition = 0.0;  // 0.0 is deckA, 1.0 is deckB
 int crossfadeDirection = 1.0;
-bool shouldCrossfade = false;
+bool crossfadeInProgress = false;
 
 void pattern_slow_pulse_with_sparkles(NSFastLED::CRGB* leds, DeckSettings* s) {
   // pick a color, and pulse it 
@@ -363,7 +364,7 @@ void loop() {
   }
 
   // increment pattern every PATTERN_CHANGE_INTERVAL_MS, but not when a deck is active!
-  if (AUTO_PATTERN_CHANGE && !shouldCrossfade) {
+  if (AUTO_PATTERN_CHANGE && !crossfadeInProgress) {
     if (t_now > deckSettingsA.t_pattern_start+PATTERN_CHANGE_INTERVAL_MS) {
       if (crossfadePosition == 1.0) {
         deckSettingsA.gPattern++;
@@ -387,7 +388,7 @@ void loop() {
   }
 
   // increment palette every PALETTE_CHANGE_INTERVAL_MS, but not when crossfading!
-  if (AUTO_CHANGE_PALETTE && !shouldCrossfade) {
+  if (AUTO_CHANGE_PALETTE && !crossfadeInProgress) {
     for (int x = 0; x < sizeof(deckSettingsAll)/sizeof(DeckSettings) ; x++){
       DeckSettings deck = deckSettingsAll[x];
       if (t_now > deck.t_palette_start + PALETTE_CHANGE_INTERVAL_MS) {
@@ -410,16 +411,22 @@ void loop() {
   } else {
     // fill in patterns on both decks! we will crossfade master output later
     // NOTE: only render to a deck if its "visible" through the crossfader
-    if (crossfadePosition < 1.0 || shouldCrossfade) {
+    if (
+      !VJ_CROSSFADING_ENABLED ||
+      ( crossfadePosition < 1.0 || crossfadeInProgress)
+    ) {
       patternBank[deckSettingsA.gPattern](deckA, &deckSettingsA);
     }
-    if (crossfadePosition > 0 || shouldCrossfade) {
+    if (
+      VJ_CROSSFADING_ENABLED &&
+      ( crossfadePosition > 0 || crossfadeInProgress )
+    ) {
       patternBank[deckSettingsB.gPattern](deckB, &deckSettingsB);
     }
   }
 
   // perform crossfading increment if we are mid pattern change
-  if (shouldCrossfade) {
+  if (VJ_CROSSFADING_ENABLED && crossfadeInProgress) {
     float step = VJ_CROSSFADE_DURATION_MS/1000/UPDATES_PER_SECOND;
     crossfadePosition += crossfadeDirection * step;
 
@@ -428,21 +435,24 @@ void loop() {
     if (crossfadePosition > 1.0) {
       crossfadePosition = 1.0;
       crossfadeDirection = -1; // 1->0
-      shouldCrossfade = false;
+      crossfadeInProgress = false;
     }
     // we are cut over to deck B
     if (crossfadePosition < 0.0) {
       crossfadePosition = 0.0;
       crossfadeDirection = 1;  // 0->1
-      shouldCrossfade = false;
+      crossfadeInProgress = false;
     }
   }
 
   // perform crossfading between deckA and deckB, by filling masterOutput
   // FIXME for now, lets just take a linear interpolation between deck a and b
   for (int i = 0; i < NUM_LEDS; ++i) {
-    //masterOutput[i] = deckA[i].lerp8(deckB[i], fract8(255*crossfadePosition));
-    masterOutput[i] = deckA[i];
+    if (VJ_CROSSFADING_ENABLED && crossfadeInProgress) {
+      masterOutput[i] = deckA[i].lerp8(deckB[i], fract8(255*crossfadePosition));
+    } else {
+      masterOutput[i] = deckA[i];
+    }
   }
 
   gLED->show();
