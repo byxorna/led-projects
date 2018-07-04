@@ -13,7 +13,7 @@ SYSTEM_MODE(SEMI_AUTOMATIC);
 // SYSTEM_THREAD(ENABLED);
 
 struct DeckSettings {
-  char label;
+  uint8_t label;
   uint8_t gPattern;
   uint8_t gPalette;
   uint8_t gAnimIndex;
@@ -24,7 +24,7 @@ struct DeckSettings {
 
 DeckSettings deckSettingsA;
 DeckSettings deckSettingsB;
-DeckSettings deckSettingsAll[] = {deckSettingsA, deckSettingsB};
+DeckSettings* deckSettingsAll[] = {&deckSettingsA, &deckSettingsB};
 
 typedef void (*FP)(NSFastLED::CRGB*, DeckSettings*);
 
@@ -35,23 +35,22 @@ typedef void (*FP)(NSFastLED::CRGB*, DeckSettings*);
 #define MAX_BRIGHTNESS 255
 #define MAX_SATURATION 255
 #define BOOTUP_ANIM_DURATION_MS 2000
-#define PATTERN_CHANGE_INTERVAL_MS 30000
-#define PALETTE_CHANGE_INTERVAL_MS 30000
+#define PATTERN_CHANGE_INTERVAL_MS 10000
+#define PALETTE_CHANGE_INTERVAL_MS 10000
 // switch between deck a and b with this interval
-#define VJ_DECK_SWITCH_INTERVAL_MS 30000
+#define VJ_DECK_SWITCH_INTERVAL_MS 15000
 #define AUTO_CHANGE_PALETTE 1
 bool AUTO_PATTERN_CHANGE = true;
 #define GLOBAL_BRIGHTNESS 80
 #define SETUP_BUTTON_HOLD_DURATION_MS 800
-#define VJ_CROSSFADING_ENABLED false
+#define VJ_CROSSFADING_ENABLED 1
 #define VJ_CROSSFADE_DURATION_MS 5000
+#define VJ_NUM_DECKS 2
 #define VJ_DECK_B_PATTERN_INDEX_OFFSET 3
 #define VJ_DECK_B_PALETTE_INDEX_OFFSET 2
 
 unsigned long t_now;                // time now in each loop iteration
 unsigned long t_boot;               // time at bootup
-//unsigned long t_pattern_start = 0;  // time last pattern changed
-//unsigned long t_palette_start = 0;  // time last palette changed
 
 /* state for controlling user-mode button for pattern changes */
 uint8_t button_state = 0;
@@ -94,9 +93,9 @@ TBlendType currentBlending = LINEARBLEND;
 CRGB masterOutput[NUM_LEDS];
 CRGB deckA[NUM_LEDS];
 CRGB deckB[NUM_LEDS];
-long crossfadePosition = 1.0;  // 0.0 is deckA, 1.0 is deckB
-int crossfadeDirection = -1; // start going B -> A
-bool crossfadeInProgress = false;
+float crossfadePosition = 1.0;  // 0.0 is deckA, 1.0 is deckB
+int crossfadeDirection = (crossfadePosition == 1.0) ? -1 : 1; // start going B -> A
+uint8_t crossfadeInProgress = 0;
 unsigned long tLastCrossfade = 0;
 
 void pattern_slow_pulse_with_sparkles(NSFastLED::CRGB* leds, DeckSettings* s) {
@@ -192,10 +191,10 @@ void pattern_disorient_palette_sparkles(NSFastLED::CRGB* leds, DeckSettings* s) 
 
 // undulates a color wave, an offset into that wave, and intensity of the led
 void pattern_time_stretch_waves_rainbow(NSFastLED::CRGB* leds, DeckSettings* s){
-  float speedIntensity = 1.0;
-  float speedColor = 1.0;
+  float speedScale = .1;
+  float speedColor = 0.75;
   for( int i = 0; i < NUM_LEDS; i++) {
-    uint8_t intensity = cos8((t_now + i) * speedIntensity);
+    uint8_t intensity = cos8((t_now + i*speedScale));
     uint8_t stretchOffset = map8( inoise8((t_now + i)), 0, 16);
     uint8_t hue = (t_now / (speedColor * 12) + (i + stretchOffset));
 
@@ -278,27 +277,29 @@ void pattern_palette_waves(NSFastLED::CRGB* leds, DeckSettings* s) {
 
 // setup() runs once, when the device is first turned on.
 void setup() {
-  t_boot = millis();
+  t_now = millis();
+  t_boot = t_now;
+  tLastCrossfade = t_now;
   Serial.begin(9600);
   Serial.println("resetting");
 
   deckSettingsA = {
-    'a',
+    1,
     0,
     0,
     0,
     palettes[0],
-    0,
-    0,
+    t_now,
+    t_now,
   };
   deckSettingsB = {
-    'b',
+    2,
     VJ_DECK_B_PATTERN_INDEX_OFFSET,
     VJ_DECK_B_PALETTE_INDEX_OFFSET,
     0,
     palettes[VJ_DECK_B_PALETTE_INDEX_OFFSET],
-    0,
-    0,
+    t_now,
+    t_now,
   };
 
 
@@ -359,11 +360,15 @@ void loop() {
   }
   if (button_state == 2) {
     // disable auto pattern changing now!
-    AUTO_PATTERN_CHANGE = false;
     deckSettingsA.gPattern++;
     deckSettingsB.gPattern++;
     button_state = 3;
-    Serial.println("moving to fixed pattern mode (use button to change)");
+    if (AUTO_PATTERN_CHANGE) {
+      AUTO_PATTERN_CHANGE = false;
+      Serial.printlnf("moving to fixed pattern mode (use button to change)");
+    }
+    Serial.printlnf("deckA.pattern=%d", deckSettingsA.gPattern);
+    Serial.printlnf("deckB.pattern=%d", deckSettingsB.gPattern);
   }
 
   // increment pattern every PATTERN_CHANGE_INTERVAL_MS, but not when a deck is active!
@@ -392,25 +397,25 @@ void loop() {
 
   // increment palette every PALETTE_CHANGE_INTERVAL_MS, but not when crossfading!
   if (AUTO_CHANGE_PALETTE && !crossfadeInProgress) {
-    for (int x = 0; x < sizeof(deckSettingsAll)/sizeof(DeckSettings) ; x++){
-      DeckSettings deck = deckSettingsAll[x];
-      if (t_now > deck.t_palette_start + PALETTE_CHANGE_INTERVAL_MS) {
-        deck.gPalette++;
-        if (deck.gPalette >= (sizeof(palettes)/sizeof(*palettes))) {
-          deck.gPalette = 0;
+    for (int x = 0; x < VJ_NUM_DECKS ; x++){
+      DeckSettings* deck = deckSettingsAll[x];
+      if (deck->t_palette_start + PALETTE_CHANGE_INTERVAL_MS < t_now) {
+        deck->gPalette++;
+        if (deck->gPalette >= (sizeof(palettes)/sizeof(*palettes))) {
+          deck->gPalette = 0;
         }
-        deck.currentPalette = palettes[deck.gPalette];
-        Serial.printlnf("deck%s.palette=%d", deck.label, deck.gPalette);
-        deck.t_palette_start = t_now;
+        deck->currentPalette = palettes[deck->gPalette];
+        deck->t_palette_start = t_now;
+        Serial.printlnf("deck%d.palette=%d", deck->label, deck->gPalette);
       }
     }
   }
 
   if (t_boot + BOOTUP_ANIM_DURATION_MS > t_now) {
     // display a bootup pattern for a bit
-    pattern_bootup_with_sparkles(masterOutput, &deckSettingsA);
-    // NOTE: we dont want to run any crossfade routines while booting
-    return;
+    pattern_bootup_with_sparkles(deckA, &deckSettingsA);
+    // fill in deckB in case
+    patternBank[deckSettingsB.gPattern](deckB, &deckSettingsB);
   } else {
     // fill in patterns on both decks! we will crossfade master output later
     // NOTE: only render to a deck if its "visible" through the crossfader
@@ -424,42 +429,52 @@ void loop() {
 
   // perform crossfading increment if we are mid pattern change
   if (VJ_CROSSFADING_ENABLED) {
+    //Serial.printf("%d %d %d\n", t_now, tLastCrossfade + VJ_DECK_SWITCH_INTERVAL_MS, crossfadeInProgress);
     if (t_now > tLastCrossfade + VJ_DECK_SWITCH_INTERVAL_MS && !crossfadeInProgress) {
       // start switching between decks
-      crossfadeInProgress = true;
+      Serial.printf("starting fading to %c\n", (crossfadePosition == 1.0) ? 'A' : 'B');
+      crossfadeInProgress = 1;
       tLastCrossfade = t_now;
     }
     if (crossfadeInProgress) {
-      float step = VJ_CROSSFADE_DURATION_MS/1000/UPDATES_PER_SECOND;
-      crossfadePosition += crossfadeDirection * step;
+      float step = (float)1.0/(VJ_CROSSFADE_DURATION_MS/1000*UPDATES_PER_SECOND);
+      // Serial.printf("fader increment %f %d\n", step, crossfadeDirection);
+      crossfadePosition = crossfadePosition + crossfadeDirection * step;
 
       // is it time to change decks?
       // we are cut over to deck B, break this loop
       if (crossfadePosition > 1.0) {
         crossfadePosition = 1.0;
         crossfadeDirection = -1; // 1->0
-        crossfadeInProgress = false;
+        crossfadeInProgress = 0;
+        Serial.printf("finished fading to B\n");
       }
       // we are cut over to deck B
       if (crossfadePosition < 0.0) {
         crossfadePosition = 0.0;
         crossfadeDirection = 1;  // 0->1
-        crossfadeInProgress = false;
+        crossfadeInProgress = 0;
+        Serial.printf("finished fading to A\n");
       }
     }
   }
+  /*
+  if (crossfadeInProgress) {
+    Serial.printf("fader %0.2f %d\n", crossfadePosition, crossfadeInProgress);
+  }
+  */
 
   // perform crossfading between deckA and deckB, by filling masterOutput
   // FIXME for now, lets just take a linear interpolation between deck a and b
   for (int i = 0; i < NUM_LEDS; ++i) {
     if (VJ_CROSSFADING_ENABLED) {
-      //masterOutput[i] = deckA[i].lerp8(deckB[i], fract8(255*crossfadePosition));
-      masterOutput[i] = deckA[i];
+      masterOutput[i] = deckA[i].lerp8(deckB[i], fract8(255*crossfadePosition));
+      //masterOutput[i] = deckA[i];
     } else {
       masterOutput[i] = deckA[i];
     }
   }
 
   gLED->show();
-  delay(1000 / UPDATES_PER_SECOND);
+  delay(1000.0 / UPDATES_PER_SECOND);
 }
