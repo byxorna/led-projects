@@ -1,6 +1,29 @@
 # d18-scarf
 arduino code for particle photon driven scarf for DI8ORIENT 2018
 
+## Features
+
+* patterns and palettes rotate in auto mode
+* interpolation between pattern decks produces smooth fades between pattern changes
+* manually change patterns by holding setup button for a few seconds
+
+## Adding Patterns
+
+Patterns are autocycled through. Define a function with the signature
+
+```
+void pattern_you_wrote(NSFastLED::CRGB* leds, DeckSettings* s)
+```
+
+And add a reference to it in
+```
+const FP patternBank[] = {
+  &<pattern_you_wrote>,
+  &pattern_other_patterns,
+};
+```
+
+
 ## Setup
 
 ```
