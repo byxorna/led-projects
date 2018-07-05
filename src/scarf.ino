@@ -34,8 +34,8 @@ typedef void (*FP)(NSFastLED::CRGB*, DeckSettings*);
 #define LED_TYPE NEOPIXEL
 #define UPDATES_PER_SECOND 120
 #define MAX_BRIGHTNESS 255
-uint8_t BRIGHTNESS_VALUES[] = {120, 40, 255};
-uint8_t BRIGHTNESS_INDEX = 0;
+uint8_t BRIGHTNESS_VALUES[] = {255, 200, 150, 120, 80, 40};
+uint8_t BRIGHTNESS_INDEX = 3;
 #define GLOBAL_BRIGHTNESS BRIGHTNESS_VALUES[BRIGHTNESS_INDEX]
 #define BRIGHTNESS_COUNT sizeof(BRIGHTNESS_VALUES)/sizeof(uint8_t)
 #define MAX_SATURATION 255
@@ -83,7 +83,6 @@ DEFINE_GRADIENT_PALETTE( Disorient_Dark_gp ) {
 // for effects that are palette based
 CRGBPalette16 palettes[] = {
   Disorient_gp,
-  //RainbowColors_p,
   CloudColors_p,
   ForestColors_p,
   OceanColors_p,
