@@ -59,6 +59,61 @@ unsigned long t_boot;               // time at bootup
 uint8_t button_state = 0;
 unsigned long button_timer = 0;
 
+static uint16_t x = NSFastLED::random16(); // x is index into pixel strip
+//static uint16_t y = NSFastLED::random16(); // y is the time variable
+static uint16_t z = NSFastLED::random16();
+// We're using the x/y dimensions to map to the x/y pixels on the matrix.  We'll
+// use the z-axis for "time".  speed determines how fast time moves forward.  Try
+// 1 for a very slow moving effect, or 60 for something that ends up looking like
+// water.
+uint16_t noisespeed = 5; // speed is set dynamically once we've started up
+// Scale determines how far apart the pixels in our noise matrix are.  Try
+// changing these values around to see how it affects the motion of the display.  The
+// higher the value of scale, the more "zoomed out" the noise iwll be.  A value
+// of 1 will be so zoomed in, you'll mostly see solid colors.
+uint16_t noisescale = 7; // scale is set dynamically once we've started up
+// This is the array that we keep our computed noise values in (only 1d)
+uint8_t noise[NUM_LEDS];
+#define FILL_NOISE false
+
+// Fill the x/y array of 8-bit noise values using the inoise8 function.
+void fillnoise8() {
+  // If we're runing at a low "speed", some 8-bit artifacts become visible
+  // from frame-to-frame.  In order to reduce this, we can do some fast data-smoothing.
+  // The amount of data smoothing we're doing depends on "speed".
+  uint8_t dataSmoothing = 0;
+  if( noisespeed < 50) {
+    dataSmoothing = 200 - (noisespeed * 4);
+  }
+
+  for(int i = 0; i < NUM_LEDS; i++) {
+    int ioffset = noisescale * i;
+
+    uint8_t data = NSFastLED::inoise8(x + ioffset, z);
+
+    // The range of the inoise8 function is roughly 16-238.
+    // These two operations expand those values out to roughly 0..255
+    // You can comment them out if you want the raw noise data.
+    data = NSFastLED::qsub8(data, 16);
+    data = NSFastLED::qadd8(data, NSFastLED::scale8(data,39));
+
+    if( dataSmoothing ) {
+      uint8_t olddata = noise[i];
+      uint8_t newdata = NSFastLED::scale8( olddata, dataSmoothing) + NSFastLED::scale8( data, 256 - dataSmoothing);
+      data = newdata;
+    }
+
+    noise[i] = data;
+  }
+
+  z += noisespeed;
+
+  // apply slow drift to X and Y, just for visual variation.
+  x += noisespeed / 8;
+  //y -= noisespeed / 16;
+}
+
+
 NSFastLED::CFastLED* gLED; // global CFastLED object
 
 /* custom color palettes */
@@ -144,6 +199,21 @@ void pattern_cylon_eye(NSFastLED::CRGB* leds, DeckSettings* s) {
     }
   }
 }
+
+/*
+// vary intensity with noise function
+void pattern_noise_rainbow(NSFastLED::CRGB* leds, DeckSettings* s) {
+  uint8_t baseHue = NSFastLED::beatsin8(3, 0, 255);
+  uint8_t iHue = 0;
+  for(int i = 0; i < NUM_LEDS; ++i) {
+    iHue = NSFastLED::addmod8(baseHue, 1, 255);
+    NSFastLED::CHSV hsv_led = NSFastLED::CHSV(iHue, 255, noise[i]);
+    NSFastLED::CRGB rgb_led;
+    hsv2rgb_rainbow(hsv_led, rgb_led);
+    leds[i] = rgb_led;
+  }
+}
+*/
 
 void pattern_bootup_with_sparkles(NSFastLED::CRGB* leds, DeckSettings* s) {
   uint8_t baseHue = NSFastLED::beatsin8(15, 0, 255);
@@ -340,7 +410,7 @@ void setup() {
 /** update this with patterns you want to be cycled through **/
 #define NUM_PATTERNS sizeof(patternBank) / sizeof(FP)
 const FP patternBank[] = {
-  //&pattern_time_stretch_waves_rainbow,
+  //&pattern_noise_rainbow,
   &pattern_from_palette,
   &pattern_disorient_palette_sparkles,
   &pattern_slow_pulse_with_sparkles,
@@ -350,6 +420,11 @@ const FP patternBank[] = {
 
 void loop() {
   t_now = millis();
+
+  if (FILL_NOISE) {
+    // fill noise array
+    fillnoise8();
+  }
 
   // handle user interaction with reset button
   if (HAL_Core_Mode_Button_Pressed(SETUP_BUTTON_HOLD_DURATION_MS)) {
