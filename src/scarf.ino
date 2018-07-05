@@ -14,6 +14,7 @@ SYSTEM_MODE(SEMI_AUTOMATIC);
 
 struct DeckSettings {
   uint8_t label;
+  float crossfadePositionActive;
   uint8_t gPattern;
   uint8_t gPalette;
   uint8_t gAnimIndex;
@@ -33,21 +34,19 @@ typedef void (*FP)(NSFastLED::CRGB*, DeckSettings*);
 #define LED_TYPE NEOPIXEL
 #define UPDATES_PER_SECOND 120
 #define MAX_BRIGHTNESS 255
+#define GLOBAL_BRIGHTNESS 80
 #define MAX_SATURATION 255
 #define BOOTUP_ANIM_DURATION_MS 2000
-#define PATTERN_CHANGE_INTERVAL_MS 10000
-#define PALETTE_CHANGE_INTERVAL_MS 10000
+#define PATTERN_CHANGE_INTERVAL_MS 30000
+#define PALETTE_CHANGE_INTERVAL_MS 30000
 // switch between deck a and b with this interval
-#define VJ_DECK_SWITCH_INTERVAL_MS 15000
+#define VJ_DECK_SWITCH_INTERVAL_MS 30000
 #define AUTO_CHANGE_PALETTE 1
 bool AUTO_PATTERN_CHANGE = true;
-#define GLOBAL_BRIGHTNESS 80
 #define SETUP_BUTTON_HOLD_DURATION_MS 800
 #define VJ_CROSSFADING_ENABLED 1
 #define VJ_CROSSFADE_DURATION_MS 5000
 #define VJ_NUM_DECKS 2
-#define VJ_DECK_B_PATTERN_INDEX_OFFSET 3
-#define VJ_DECK_B_PALETTE_INDEX_OFFSET 2
 
 unsigned long t_now;                // time now in each loop iteration
 unsigned long t_boot;               // time at bootup
@@ -190,13 +189,18 @@ void pattern_disorient_palette_sparkles(NSFastLED::CRGB* leds, DeckSettings* s) 
 }
 
 // undulates a color wave, an offset into that wave, and intensity of the led
+/* im bad at programming and cant figure out the noise functions
 void pattern_time_stretch_waves_rainbow(NSFastLED::CRGB* leds, DeckSettings* s){
   float speedScale = .1;
-  float speedColor = 0.75;
+  float speedColor = 0.5;
   for( int i = 0; i < NUM_LEDS; i++) {
-    uint8_t intensity = cos8((t_now + i*speedScale));
     uint8_t stretchOffset = map8( inoise8((t_now + i)), 0, 16);
-    uint8_t hue = (t_now / (speedColor * 12) + (i + stretchOffset));
+    //uint8_t hue = inoise8(t_now, random16(), i);
+    float hraw = t_now*speedColor/1000.0 + 1.0*i/10.0;
+    uint8_t hue = cos8(hraw);
+    uint8_t intensity = cos8(t_now*speedScale + 1.0);
+    //Serial.printlnf("%3d %d %d",i, hue, intensity);
+    Serial.printlnf("%3d %3d %3d",i, hue, hraw);
 
     CRGB rgb_led;
     CHSV hsv_led = CHSV(hue, 255, intensity);
@@ -204,6 +208,7 @@ void pattern_time_stretch_waves_rainbow(NSFastLED::CRGB* leds, DeckSettings* s){
     leds[i] = rgb_led;
   }
 }
+*/
 
 void pattern_from_palette(NSFastLED::CRGB* leds, DeckSettings* s) {
   uint8_t b = beatsin8(4, 0, 255);
@@ -285,6 +290,7 @@ void setup() {
 
   deckSettingsA = {
     1,
+    0.0,
     0,
     0,
     0,
@@ -294,10 +300,11 @@ void setup() {
   };
   deckSettingsB = {
     2,
-    VJ_DECK_B_PATTERN_INDEX_OFFSET,
-    VJ_DECK_B_PALETTE_INDEX_OFFSET,
+    1.0,
     0,
-    palettes[VJ_DECK_B_PALETTE_INDEX_OFFSET],
+    0,
+    0,
+    palettes[0],
     t_now,
     t_now,
   };
@@ -320,7 +327,7 @@ void setup() {
 /** update this with patterns you want to be cycled through **/
 #define NUM_PATTERNS sizeof(patternBank) / sizeof(FP)
 const FP patternBank[] = {
-  &pattern_time_stretch_waves_rainbow,
+  //&pattern_time_stretch_waves_rainbow,
   &pattern_from_palette,
   &pattern_disorient_palette_sparkles,
   &pattern_slow_pulse_with_sparkles,
@@ -399,7 +406,8 @@ void loop() {
   if (AUTO_CHANGE_PALETTE && !crossfadeInProgress) {
     for (int x = 0; x < VJ_NUM_DECKS ; x++){
       DeckSettings* deck = deckSettingsAll[x];
-      if (deck->t_palette_start + PALETTE_CHANGE_INTERVAL_MS < t_now) {
+      if ((deck->crossfadePositionActive != crossfadePosition) && 
+        (deck->t_palette_start + PALETTE_CHANGE_INTERVAL_MS < t_now)) {
         deck->gPalette++;
         if (deck->gPalette >= (sizeof(palettes)/sizeof(*palettes))) {
           deck->gPalette = 0;
@@ -414,8 +422,9 @@ void loop() {
   if (t_boot + BOOTUP_ANIM_DURATION_MS > t_now) {
     // display a bootup pattern for a bit
     pattern_bootup_with_sparkles(deckA, &deckSettingsA);
-    // fill in deckB in case
-    patternBank[deckSettingsB.gPattern](deckB, &deckSettingsB);
+    for (int i = 0; i < NUM_LEDS; ++i) {
+      deckB[i] = deckA[i];
+    }
   } else {
     // fill in patterns on both decks! we will crossfade master output later
     // NOTE: only render to a deck if its "visible" through the crossfader
