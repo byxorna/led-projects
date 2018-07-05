@@ -34,19 +34,22 @@ typedef void (*FP)(NSFastLED::CRGB*, DeckSettings*);
 #define LED_TYPE NEOPIXEL
 #define UPDATES_PER_SECOND 120
 #define MAX_BRIGHTNESS 255
-#define GLOBAL_BRIGHTNESS 80
+uint8_t BRIGHTNESS_VALUES[] = {120, 40, 255};
+uint8_t BRIGHTNESS_INDEX = 0;
+#define GLOBAL_BRIGHTNESS BRIGHTNESS_VALUES[BRIGHTNESS_INDEX]
+#define BRIGHTNESS_COUNT sizeof(BRIGHTNESS_VALUES)/sizeof(uint8_t)
 #define MAX_SATURATION 255
 #define BOOTUP_ANIM_DURATION_MS 2000
 #define PATTERN_CHANGE_INTERVAL_MS 30000
 #define PALETTE_CHANGE_INTERVAL_MS 30000
+#define VJ_CROSSFADING_ENABLED 1
+#define VJ_CROSSFADE_DURATION_MS 3000
+#define VJ_NUM_DECKS 2
 // switch between deck a and b with this interval
-#define VJ_DECK_SWITCH_INTERVAL_MS 30000
+#define VJ_DECK_SWITCH_INTERVAL_MS 15000
 #define AUTO_CHANGE_PALETTE 1
 bool AUTO_PATTERN_CHANGE = true;
 #define SETUP_BUTTON_HOLD_DURATION_MS 800
-#define VJ_CROSSFADING_ENABLED 1
-#define VJ_CROSSFADE_DURATION_MS 5000
-#define VJ_NUM_DECKS 2
 
 unsigned long t_now;                // time now in each loop iteration
 unsigned long t_boot;               // time at bootup
@@ -292,9 +295,9 @@ void setup() {
     1,
     0.0,
     0,
-    0,
-    0,
-    palettes[0],
+    1,
+    1,
+    palettes[1],
     t_now,
     t_now,
   };
@@ -345,7 +348,6 @@ void loop() {
       // we werent pressed before, so start timer!
       button_state = 1;
       button_timer = t_now;
-      //RGB.color(255, 0, 0);
       break;
     case 1:
       //RGB.color(0, 255, 0); // green when waiting
@@ -365,6 +367,8 @@ void loop() {
   } else {
     button_state = 0;
   }
+  // toggle patterns
+  /*
   if (button_state == 2) {
     // disable auto pattern changing now!
     deckSettingsA.gPattern++;
@@ -377,6 +381,18 @@ void loop() {
     Serial.printlnf("deckA.pattern=%d", deckSettingsA.gPattern);
     Serial.printlnf("deckB.pattern=%d", deckSettingsB.gPattern);
   }
+  */
+  if (button_state == 2) {
+    // disable auto pattern changing now!
+    BRIGHTNESS_INDEX++;
+    button_state = 3;
+    if (BRIGHTNESS_INDEX >= BRIGHTNESS_COUNT){
+      BRIGHTNESS_INDEX = 0;
+    }
+    Serial.printlnf("set brightness to %d/255", GLOBAL_BRIGHTNESS);
+  }
+
+
 
   // increment pattern every PATTERN_CHANGE_INTERVAL_MS, but not when a deck is active!
   if (AUTO_PATTERN_CHANGE && !crossfadeInProgress) {
@@ -484,6 +500,7 @@ void loop() {
     }
   }
 
+  gLED->setBrightness(GLOBAL_BRIGHTNESS);
   gLED->show();
   delay(1000.0 / UPDATES_PER_SECOND);
 }
