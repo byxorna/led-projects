@@ -8,7 +8,8 @@
 #include "Particle.h"
 #include "FastLED.h"
 
-FASTLED_USING_NAMESPACE;
+// NSFastLED
+//NOPE! FASTLED_USING_NAMESPACE;
 SYSTEM_MODE(SEMI_AUTOMATIC);
 // SYSTEM_THREAD(ENABLED);
 
@@ -18,7 +19,7 @@ struct DeckSettings {
   uint8_t gPattern;
   uint8_t gPalette;
   uint8_t gAnimIndex;
-  CRGBPalette16 currentPalette; // current color palette
+  NSFastLED::CRGBPalette16 currentPalette; // current color palette
   unsigned long t_pattern_start;  // time last pattern changed
   unsigned long t_palette_start;  // time last palette changed
 };
@@ -31,7 +32,7 @@ typedef void (*FP)(NSFastLED::CRGB*, DeckSettings*);
 
 #define NUM_LEDS 102
 #define LEDS_PIN D6
-#define LED_TYPE NEOPIXEL
+#define LED_TYPE NSFastLED::NEOPIXEL
 #define UPDATES_PER_SECOND 120
 #define MAX_BRIGHTNESS 255
 uint8_t BRIGHTNESS_VALUES[] = {255, 200, 150, 100, 75, 40};
@@ -58,43 +59,48 @@ unsigned long t_boot;               // time at bootup
 uint8_t button_state = 0;
 unsigned long button_timer = 0;
 
-CFastLED* gLED; // global CFastLED object
+NSFastLED::CFastLED* gLED; // global CFastLED object
 
 /* custom color palettes */
 // orange 255,102,0 FF6600
 // pink 255,0,255 #ff00ff
 // pornj 255,51,51 #ff3333
-DEFINE_GRADIENT_PALETTE( Disorient_gp ) {
+extern const NSFastLED::TProgmemRGBGradientPalette_byte Disorient_gp[] = {
       0,   0,   0,   0,    // black
      75, 255,  26, 153,    // pink
     147, 255,  51,  51,    // pornj
     208, 255, 111,  15,    // orange
     255, 255, 255, 255, }; // white
 
-DEFINE_GRADIENT_PALETTE( Disorient_Dark_gp ) {
-     0,  255,  26, 153,    // pink
-     50,   0,   0,   0,    // black
-    100, 255,  255,  255,  // white
-    150,   0,   0,   0,    // black
-    200, 255, 111,  15,    // orange
-    255,   0,   0,   0, }; // black
+// https://gist.github.com/kriegsman/8281905786e8b2632aeb
 
+// Gradient palette "es_pinksplash_08_gp", originally from
+// http://soliton.vm.bytemark.co.uk/pub/cpt-city/es/pink_splash/tn/es_pinksplash_08.png.index.html
+// converted for FastLED with gammas (2.6, 2.2, 2.5)
+// Size: 20 bytes of program space.
+extern const NSFastLED::TProgmemRGBGradientPalette_byte es_pinksplash_08_gp[] = {
+    0, 126, 11,255,
+  127, 197,  1, 22,
+  175, 210,157,172,
+  221, 157,  3,112,
+  255, 157,  3,112};
 
 // for effects that are palette based
-CRGBPalette16 palettes[] = {
+NSFastLED::CRGBPalette16 palettes[] = {
   Disorient_gp,
-  CloudColors_p,
-  ForestColors_p,
-  OceanColors_p,
-  LavaColors_p,
+  NSFastLED::CloudColors_p,
+  es_pinksplash_08_gp,
+  NSFastLED::ForestColors_p,
+  NSFastLED::OceanColors_p,
+  NSFastLED::LavaColors_p,
 };
 #define PALETTES_COUNT (sizeof(palettes)/sizeof(*palettes))
 
 
-TBlendType currentBlending = LINEARBLEND;
-CRGB masterOutput[NUM_LEDS];
-CRGB deckA[NUM_LEDS];
-CRGB deckB[NUM_LEDS];
+NSFastLED::TBlendType currentBlending = NSFastLED::LINEARBLEND;
+NSFastLED::CRGB masterOutput[NUM_LEDS];
+NSFastLED::CRGB deckA[NUM_LEDS];
+NSFastLED::CRGB deckB[NUM_LEDS];
 float crossfadePosition = 1.0;  // 0.0 is deckA, 1.0 is deckB
 int crossfadeDirection = (crossfadePosition == 1.0) ? -1 : 1; // start going B -> A
 uint8_t crossfadeInProgress = 0;
@@ -102,14 +108,14 @@ unsigned long tLastCrossfade = 0;
 
 void pattern_slow_pulse_with_sparkles(NSFastLED::CRGB* leds, DeckSettings* s) {
   // pick a color, and pulse it 
-  uint8_t cBrightness = beatsin8(20, 140, 255);
-  uint8_t cHue = beatsin8(4, 0, 255);
-  CHSV hsv_led = CHSV(cHue, 255, cBrightness);
-  CRGB rgb_led;
+  uint8_t cBrightness = NSFastLED::beatsin8(20, 140, 255);
+  uint8_t cHue = NSFastLED::beatsin8(4, 0, 255);
+  NSFastLED::CHSV hsv_led = NSFastLED::CHSV(cHue, 255, cBrightness);
+  NSFastLED::CRGB rgb_led;
   hsv2rgb_rainbow(hsv_led, rgb_led);
   for( int i = 0; i < NUM_LEDS; i++) {
     if (random(NUM_LEDS*3) == 0) {
-      leds[i] = CRGB::White;
+      leds[i] = NSFastLED::CRGB::White;
     } else {
       leds[i] = rgb_led;
     }
@@ -119,36 +125,36 @@ void pattern_slow_pulse_with_sparkles(NSFastLED::CRGB* leds, DeckSettings* s) {
 void pattern_cylon_eye(NSFastLED::CRGB* leds, DeckSettings* s) {
   // cylon eye is 4 pixels wide, +/++ base index
   // we map a 60bpm(1s) cycle into 0..num leds-1
-  uint8_t h = beatsin8(8, 0, 255);
-  CHSV hsv_led = CHSV(h, 255, 255);
-  CRGB rgb_led;
+  uint8_t h = NSFastLED::beatsin8(8, 0, 255);
+  NSFastLED::CHSV hsv_led = NSFastLED::CHSV(h, 255, 255);
+  NSFastLED::CRGB rgb_led;
   hsv2rgb_rainbow(hsv_led, rgb_led);
-  uint8_t mappedIndex = beatsin8(60, 0, NUM_LEDS-1);
+  uint8_t mappedIndex = NSFastLED::beatsin8(60, 0, NUM_LEDS-1);
   for(int i = 0; i < NUM_LEDS; ++i) {
     if (mappedIndex == i) {
       leds[i] = rgb_led;
-    } else if (addmod8(mappedIndex, 1, 255) == i) {
+    } else if (NSFastLED::addmod8(mappedIndex, 1, 255) == i) {
       leds[i] = rgb_led;
-    } else if (addmod8(mappedIndex, 2, 255) == i) {
+    } else if (NSFastLED::addmod8(mappedIndex, 2, 255) == i) {
       leds[i] = rgb_led;
-    } else if (addmod8(mappedIndex, 3, 255) == i) {
+    } else if (NSFastLED::addmod8(mappedIndex, 3, 255) == i) {
       leds[i] = rgb_led;
     } else {
-      leds[i] = CRGB::Black;
+      leds[i] = NSFastLED::CRGB::Black;
     }
   }
 }
 
 void pattern_bootup_with_sparkles(NSFastLED::CRGB* leds, DeckSettings* s) {
-  uint8_t baseHue = beatsin8(15, 0, 255);
+  uint8_t baseHue = NSFastLED::beatsin8(15, 0, 255);
   uint8_t iHue = 0;
   for(int i = 0; i < NUM_LEDS; ++i) {
     if (random(NUM_LEDS) == 0) {
-      leds[i] = CRGB::White;
+      leds[i] = NSFastLED::CRGB::White;
     } else {
-      iHue = addmod8(baseHue, 1, 255);
-      CHSV hsv_led = CHSV(iHue, 255, 255);
-      CRGB rgb_led;
+      iHue = NSFastLED::addmod8(baseHue, 1, 255);
+      NSFastLED::CHSV hsv_led = NSFastLED::CHSV(iHue, 255, 255);
+      NSFastLED::CRGB rgb_led;
       hsv2rgb_rainbow(hsv_led, rgb_led);
       leds[i] = rgb_led;
     }
@@ -159,11 +165,11 @@ void pattern_bootup_with_sparkles(NSFastLED::CRGB* leds, DeckSettings* s) {
 void pattern_rainbow_waves_with_sparkles(NSFastLED::CRGB* leds, DeckSettings* s) {
   for(int i = 0; i < NUM_LEDS; ++i) {
     if (random(NUM_LEDS*3) == 0) {
-      leds[i] = CRGB::White;
+      leds[i] = NSFastLED::CRGB::White;
     } else {
       uint8_t h = (t_now/12+i)%256;
-      CHSV hsv_led = CHSV(h, 255, 255);
-      CRGB rgb_led;
+      NSFastLED::CHSV hsv_led = NSFastLED::CHSV(h, 255, 255);
+      NSFastLED::CRGB rgb_led;
       hsv2rgb_rainbow(hsv_led, rgb_led);
       leds[i] = rgb_led;
     }
@@ -172,22 +178,22 @@ void pattern_rainbow_waves_with_sparkles(NSFastLED::CRGB* leds, DeckSettings* s)
 
 void pattern_clear(NSFastLED::CRGB* leds) {
   for( int i = 0; i < NUM_LEDS; i++) {
-    leds[i] = CRGB::Black;
+    leds[i] = NSFastLED::CRGB::Black;
   }
 }
 
 void pattern_disorient_palette_sparkles(NSFastLED::CRGB* leds, DeckSettings* s) {
-  uint8_t b = beatsin8(4, 0, 255);
+  uint8_t b = NSFastLED::beatsin8(4, 0, 255);
   for( int i = 0; i < NUM_LEDS; i++) {
     if (random(NUM_LEDS*4) == 0) {
-      leds[i] = CRGB::White;
+      leds[i] = NSFastLED::CRGB::White;
     } else {
-      leds[i] = ColorFromPalette((CRGBPalette16)Disorient_gp, s->gAnimIndex + i + b, MAX_BRIGHTNESS, currentBlending);
+      leds[i] = ColorFromPalette((NSFastLED::CRGBPalette16)Disorient_gp, s->gAnimIndex + i + b, MAX_BRIGHTNESS, currentBlending);
     }
   }
   // slow down progression by 1/3
   if (t_now%3 == 0) {
-    s->gAnimIndex = addmod8(s->gAnimIndex, 1, 255);
+    s->gAnimIndex = NSFastLED::addmod8(s->gAnimIndex, 1, 255);
   }
 }
 
@@ -205,8 +211,8 @@ void pattern_time_stretch_waves_rainbow(NSFastLED::CRGB* leds, DeckSettings* s){
     //Serial.printlnf("%3d %d %d",i, hue, intensity);
     Serial.printlnf("%3d %3d %3d",i, hue, hraw);
 
-    CRGB rgb_led;
-    CHSV hsv_led = CHSV(hue, 255, intensity);
+    NSFastLED::CRGB rgb_led;
+    NSFastLED::CHSV hsv_led = NSFastLED::CHSV(hue, 255, intensity);
     hsv2rgb_rainbow(hsv_led, rgb_led);
     leds[i] = rgb_led;
   }
@@ -214,19 +220,19 @@ void pattern_time_stretch_waves_rainbow(NSFastLED::CRGB* leds, DeckSettings* s){
 */
 
 void pattern_from_palette(NSFastLED::CRGB* leds, DeckSettings* s) {
-  uint8_t b = beatsin8(4, 0, 255);
+  uint8_t b = NSFastLED::beatsin8(4, 0, 255);
   for( int i = 0; i < NUM_LEDS; i++) {
     leds[i] = ColorFromPalette(s->currentPalette, s->gAnimIndex + i + b, MAX_BRIGHTNESS, currentBlending);
   }
   // slow down progression by 1/3
   if (t_now%3 == 0) {
-    s->gAnimIndex = addmod8(s->gAnimIndex, 1, 255);
+    s->gAnimIndex = NSFastLED::addmod8(s->gAnimIndex, 1, 255);
   }
 }
 
 void pattern_brake_light(NSFastLED::CRGB* leds, DeckSettings* s) {
   for (int i = 0; i < NUM_LEDS; ++i) {
-    leds[i] = CRGB::Red;
+    leds[i] = NSFastLED::CRGB::Red;
   }
 }
 
@@ -239,19 +245,19 @@ void pattern_palette_waves(NSFastLED::CRGB* leds, DeckSettings* s) {
   static uint16_t sLastMillis = 0;
   static uint16_t sHue16 = 0;
 
-  //uint8_t sat8 = beatsin88( 87, 220, 250);
-  uint8_t brightdepth = beatsin88( 341, 96, 224);
-  uint16_t brightnessthetainc16 = beatsin88( 203, (25 * 256), (40 * 256));
-  uint8_t msmultiplier = beatsin88(147, 23, 60);
+  //uint8_t sat8 = NSFastLED::beatsin88( 87, 220, 250);
+  uint8_t brightdepth = NSFastLED::beatsin88( 341, 96, 224);
+  uint16_t brightnessthetainc16 = NSFastLED::beatsin88( 203, (25 * 256), (40 * 256));
+  uint8_t msmultiplier = NSFastLED::beatsin88(147, 23, 60);
 
   uint16_t hue16 = sHue16;//gHue * 256;
-  uint16_t hueinc16 = beatsin88(113, 300, 1500);
+  uint16_t hueinc16 = NSFastLED::beatsin88(113, 300, 1500);
 
   uint16_t ms = millis();
   uint16_t deltams = ms - sLastMillis ;
   sLastMillis  = ms;
   sPseudotime += deltams * msmultiplier;
-  sHue16 += deltams * beatsin88( 400, 5,9);
+  sHue16 += deltams * NSFastLED::beatsin88( 400, 5,9);
   uint16_t brightnesstheta16 = sPseudotime;
 
   for( uint16_t i = 0 ; i < numleds; i++) {
@@ -265,16 +271,16 @@ void pattern_palette_waves(NSFastLED::CRGB* leds, DeckSettings* s) {
     }
 
     brightnesstheta16  += brightnessthetainc16;
-    uint16_t b16 = sin16( brightnesstheta16  ) + 32768;
+    uint16_t b16 = NSFastLED::sin16( brightnesstheta16  ) + 32768;
 
     uint16_t bri16 = (uint32_t)((uint32_t)b16 * (uint32_t)b16) / 65536;
     uint8_t bri8 = (uint32_t)(((uint32_t)bri16) * brightdepth) / 65536;
     bri8 += (255 - brightdepth);
 
     uint8_t index = hue8;
-    index = scale8( index, 240);
+    index = NSFastLED::scale8( index, 240);
 
-    CRGB newcolor = ColorFromPalette(s->currentPalette, index, bri8);
+    NSFastLED::CRGB newcolor = NSFastLED::ColorFromPalette(s->currentPalette, index, bri8);
 
     uint16_t pixelnumber = i;
     pixelnumber = (numleds-1) - pixelnumber;
@@ -290,6 +296,10 @@ void setup() {
   tLastCrossfade = t_now;
   Serial.begin(9600);
   Serial.println("resetting");
+
+  // disable the built in LED
+  RGB.control(true);
+  RGB.brightness(0);
 
   deckSettingsA = {
     1,
@@ -315,7 +325,7 @@ void setup() {
 
 
   // led controller, data pin, clock pin, RGB type (RGB is already defined in particle)
-  gLED = new CFastLED();
+  gLED = new NSFastLED::CFastLED();
   gLED->addLeds<LED_TYPE, LEDS_PIN>(masterOutput, NUM_LEDS);
   gLED->setBrightness(GLOBAL_BRIGHTNESS);
   pattern_clear(masterOutput);
@@ -350,7 +360,6 @@ void loop() {
       button_timer = t_now;
       break;
     case 1:
-      //RGB.color(0, 255, 0); // green when waiting
       if (t_now - button_timer > SETUP_BUTTON_HOLD_DURATION_MS) {
         // we have been held longer than
         button_state = 2;
@@ -493,7 +502,7 @@ void loop() {
   // FIXME for now, lets just take a linear interpolation between deck a and b
   for (int i = 0; i < NUM_LEDS; ++i) {
     if (VJ_CROSSFADING_ENABLED) {
-      masterOutput[i] = deckA[i].lerp8(deckB[i], fract8(255*crossfadePosition));
+      masterOutput[i] = deckA[i].lerp8(deckB[i], NSFastLED::fract8(255*crossfadePosition));
       //masterOutput[i] = deckA[i];
     } else {
       masterOutput[i] = deckA[i];
