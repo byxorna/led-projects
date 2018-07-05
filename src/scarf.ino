@@ -81,14 +81,15 @@ DEFINE_GRADIENT_PALETTE( Disorient_Dark_gp ) {
 
 
 // for effects that are palette based
-CRGBPalette16 palettes[6] = {
+CRGBPalette16 palettes[] = {
   Disorient_gp,
-  RainbowColors_p,
+  //RainbowColors_p,
   CloudColors_p,
   ForestColors_p,
   OceanColors_p,
   LavaColors_p,
 };
+#define PALETTES_COUNT (sizeof(palettes)/sizeof(*palettes))
 
 
 TBlendType currentBlending = LINEARBLEND;
@@ -102,7 +103,7 @@ unsigned long tLastCrossfade = 0;
 
 void pattern_slow_pulse_with_sparkles(NSFastLED::CRGB* leds, DeckSettings* s) {
   // pick a color, and pulse it 
-  uint8_t cBrightness = beatsin8(20, 120, 255);
+  uint8_t cBrightness = beatsin8(20, 140, 255);
   uint8_t cHue = beatsin8(4, 0, 255);
   CHSV hsv_led = CHSV(cHue, 255, cBrightness);
   CRGB rgb_led;
@@ -425,7 +426,7 @@ void loop() {
       if ((deck->crossfadePositionActive != crossfadePosition) && 
         (deck->t_palette_start + PALETTE_CHANGE_INTERVAL_MS < t_now)) {
         deck->gPalette++;
-        if (deck->gPalette >= (sizeof(palettes)/sizeof(*palettes))) {
+        if (deck->gPalette >= PALETTES_COUNT) {
           deck->gPalette = 0;
         }
         deck->currentPalette = palettes[deck->gPalette];
