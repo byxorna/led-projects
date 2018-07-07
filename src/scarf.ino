@@ -567,11 +567,6 @@ void loop() {
       }
     }
   }
-  /*
-  if (crossfadeInProgress) {
-    Serial.printf("fader %0.2f %d\n", crossfadePosition, crossfadeInProgress);
-  }
-  */
 
   // perform crossfading between deckA and deckB, by filling masterOutput
   // FIXME for now, lets just take a linear interpolation between deck a and b
