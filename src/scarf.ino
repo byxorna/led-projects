@@ -16,12 +16,12 @@ SYSTEM_MODE(SEMI_AUTOMATIC);
 struct DeckSettings {
   uint8_t label;
   float crossfadePositionActive;
-  uint8_t gPattern;
-  uint8_t gPalette;
-  uint8_t gAnimIndex;
+  uint8_t pattern;
+  uint8_t palette;
+  uint8_t animationIndex;
   NSFastLED::CRGBPalette16 currentPalette; // current color palette
-  unsigned long t_pattern_start;  // time last pattern changed
-  unsigned long t_palette_start;  // time last palette changed
+  unsigned long tPatternStart;  // time last pattern changed
+  unsigned long tPaletteStart;  // time last palette changed
 };
 
 DeckSettings deckSettingsA;
@@ -258,12 +258,12 @@ void pattern_disorient_palette_sparkles(NSFastLED::CRGB* leds, DeckSettings* s) 
     if (random(NUM_LEDS*4) == 0) {
       leds[i] = NSFastLED::CRGB::White;
     } else {
-      leds[i] = ColorFromPalette((NSFastLED::CRGBPalette16)Disorient_gp, s->gAnimIndex + i + b, MAX_BRIGHTNESS, currentBlending);
+      leds[i] = ColorFromPalette((NSFastLED::CRGBPalette16)Disorient_gp, s->animationIndex + i + b, MAX_BRIGHTNESS, currentBlending);
     }
   }
   // slow down progression by 1/3
   if (t_now%3 == 0) {
-    s->gAnimIndex = NSFastLED::addmod8(s->gAnimIndex, 1, 255);
+    s->animationIndex = NSFastLED::addmod8(s->animationIndex, 1, 255);
   }
 }
 
@@ -292,11 +292,11 @@ void pattern_time_stretch_waves_rainbow(NSFastLED::CRGB* leds, DeckSettings* s){
 void pattern_from_palette(NSFastLED::CRGB* leds, DeckSettings* s) {
   uint8_t b = NSFastLED::beatsin8(4, 0, 255);
   for( int i = 0; i < NUM_LEDS; i++) {
-    leds[i] = ColorFromPalette(s->currentPalette, s->gAnimIndex + i + b, MAX_BRIGHTNESS, currentBlending);
+    leds[i] = ColorFromPalette(s->currentPalette, s->animationIndex + i + b, MAX_BRIGHTNESS, currentBlending);
   }
   // slow down progression by 1/3
   if (t_now%3 == 0) {
-    s->gAnimIndex = NSFastLED::addmod8(s->gAnimIndex, 1, 255);
+    s->animationIndex = NSFastLED::addmod8(s->animationIndex, 1, 255);
   }
 }
 
@@ -455,15 +455,15 @@ void loop() {
   /*
   if (button_state == 2) {
     // disable auto pattern changing now!
-    deckSettingsA.gPattern++;
-    deckSettingsB.gPattern++;
+    deckSettingsA.pattern++;
+    deckSettingsB.pattern++;
     button_state = 3;
     if (AUTO_PATTERN_CHANGE) {
       AUTO_PATTERN_CHANGE = false;
       Serial.printlnf("moving to fixed pattern mode (use button to change)");
     }
-    Serial.printlnf("deckA.pattern=%d", deckSettingsA.gPattern);
-    Serial.printlnf("deckB.pattern=%d", deckSettingsB.gPattern);
+    Serial.printlnf("deckA.pattern=%d", deckSettingsA.pattern);
+    Serial.printlnf("deckB.pattern=%d", deckSettingsB.pattern);
   }
   */
   if (button_state == 2) {
@@ -480,24 +480,24 @@ void loop() {
 
   // increment pattern every PATTERN_CHANGE_INTERVAL_MS, but not when a deck is active!
   if (AUTO_PATTERN_CHANGE && !crossfadeInProgress) {
-    if (t_now > deckSettingsA.t_pattern_start+PATTERN_CHANGE_INTERVAL_MS) {
+    if (t_now > deckSettingsA.tPatternStart+PATTERN_CHANGE_INTERVAL_MS) {
       if (crossfadePosition == 1.0) {
-        deckSettingsA.gPattern++;
-        deckSettingsA.t_pattern_start = t_now;
-        if (deckSettingsA.gPattern >= NUM_PATTERNS) {
-          deckSettingsA.gPattern = 0;
+        deckSettingsA.pattern++;
+        deckSettingsA.tPatternStart = t_now;
+        if (deckSettingsA.pattern >= NUM_PATTERNS) {
+          deckSettingsA.pattern = 0;
         }
-        Serial.printlnf("deckA.pattern=%d", deckSettingsA.gPattern);
+        Serial.printlnf("deckA.pattern=%d", deckSettingsA.pattern);
       }
     }
-    if (t_now > deckSettingsB.t_pattern_start+PATTERN_CHANGE_INTERVAL_MS) {
+    if (t_now > deckSettingsB.tPatternStart+PATTERN_CHANGE_INTERVAL_MS) {
       if (crossfadePosition == 0.0) {
-        deckSettingsB.gPattern++;
-        deckSettingsB.t_pattern_start = t_now;
-        if (deckSettingsB.gPattern >= NUM_PATTERNS) {
-          deckSettingsB.gPattern = 0;
+        deckSettingsB.pattern++;
+        deckSettingsB.tPatternStart = t_now;
+        if (deckSettingsB.pattern >= NUM_PATTERNS) {
+          deckSettingsB.pattern = 0;
         }
-        Serial.printlnf("deckB.pattern=%d", deckSettingsB.gPattern);
+        Serial.printlnf("deckB.pattern=%d", deckSettingsB.pattern);
       }
     }
   }
@@ -507,14 +507,14 @@ void loop() {
     for (int x = 0; x < VJ_NUM_DECKS ; x++){
       DeckSettings* deck = deckSettingsAll[x];
       if ((deck->crossfadePositionActive != crossfadePosition) && 
-        (deck->t_palette_start + PALETTE_CHANGE_INTERVAL_MS < t_now)) {
-        deck->gPalette++;
-        if (deck->gPalette >= PALETTES_COUNT) {
-          deck->gPalette = 0;
+        (deck->tPaletteStart + PALETTE_CHANGE_INTERVAL_MS < t_now)) {
+        deck->palette++;
+        if (deck->palette >= PALETTES_COUNT) {
+          deck->palette = 0;
         }
-        deck->currentPalette = palettes[deck->gPalette];
-        deck->t_palette_start = t_now;
-        Serial.printlnf("deck%d.palette=%d", deck->label, deck->gPalette);
+        deck->currentPalette = palettes[deck->palette];
+        deck->tPaletteStart = t_now;
+        Serial.printlnf("deck%d.palette=%d", deck->label, deck->palette);
       }
     }
   }
@@ -529,10 +529,10 @@ void loop() {
     // fill in patterns on both decks! we will crossfade master output later
     // NOTE: only render to a deck if its "visible" through the crossfader
     if ( !VJ_CROSSFADING_ENABLED || crossfadePosition < 1.0 ) {
-      patternBank[deckSettingsA.gPattern](deckA, &deckSettingsA);
+      patternBank[deckSettingsA.pattern](deckA, &deckSettingsA);
     }
     if ( VJ_CROSSFADING_ENABLED && crossfadePosition > 0 ) {
-      patternBank[deckSettingsB.gPattern](deckB, &deckSettingsB);
+      patternBank[deckSettingsB.pattern](deckB, &deckSettingsB);
     }
   }
 
