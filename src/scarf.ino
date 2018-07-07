@@ -38,12 +38,12 @@ typedef void (*FP)(NSFastLED::CRGB*, DeckSettings*);
 #define LED_TYPE NSFastLED::NEOPIXEL
 #define UPDATES_PER_SECOND 120
 #define MAX_BRIGHTNESS 255
-uint8_t BRIGHTNESS_VALUES[] = {255, 180, 110, 65, 40};
-uint8_t BRIGHTNESS_INDEX = 2;
+uint8_t BRIGHTNESS_VALUES[] = {255, 180, 110, 80, 65, 40};
+uint8_t BRIGHTNESS_INDEX = 3;
 #define GLOBAL_BRIGHTNESS BRIGHTNESS_VALUES[BRIGHTNESS_INDEX]
 #define BRIGHTNESS_COUNT sizeof(BRIGHTNESS_VALUES)/sizeof(uint8_t)
 #define MAX_SATURATION 255
-#define BOOTUP_ANIM_DURATION_MS 2000
+#define BOOTUP_ANIM_DURATION_MS 4000
 #define PATTERN_CHANGE_INTERVAL_MS 30000
 #define PALETTE_CHANGE_INTERVAL_MS 30000
 #define VJ_CROSSFADING_ENABLED 1
@@ -143,12 +143,69 @@ extern const NSFastLED::TProgmemRGBGradientPalette_byte es_pinksplash_08_gp[] = 
   221, 157,  3,112,
   255, 157,  3,112};
 
+// Gradient palette "es_pinksplash_07_gp", originally from
+// http://soliton.vm.bytemark.co.uk/pub/cpt-city/es/pink_splash/tn/es_pinksplash_07.png.index.html
+// converted for FastLED with gammas (2.6, 2.2, 2.5)
+// Size: 28 bytes of program space.
+
+extern const NSFastLED::TProgmemRGBGradientPalette_byte es_pinksplash_07_gp[] = {
+    0, 229,  1,  1,
+   61, 242,  4, 63,
+  101, 255, 12,255,
+  127, 249, 81,252,
+  153, 255, 11,235,
+  193, 244,  5, 68,
+  255, 232,  1,  5};
+
+// Gradient palette "Sunset_Real_gp", originally from
+// http://soliton.vm.bytemark.co.uk/pub/cpt-city/nd/atmospheric/tn/Sunset_Real.png.index.html
+// converted for FastLED with gammas (2.6, 2.2, 2.5)
+// Size: 28 bytes of program space.
+
+extern const NSFastLED::TProgmemRGBGradientPalette_byte Sunset_Real_gp[] {
+    0, 120,  0,  0,
+   22, 179, 22,  0,
+   51, 255,104,  0,
+   85, 167, 22, 18,
+  135, 100,  0,103,
+  198,  16,  0,130,
+  255,   0,  0,160};
+
+// Gradient palette "rgi_15_gp", originally from
+// http://soliton.vm.bytemark.co.uk/pub/cpt-city/ds/rgi/tn/rgi_15.png.index.html
+// converted for FastLED with gammas (2.6, 2.2, 2.5)
+// Size: 36 bytes of program space.
+
+extern const NSFastLED::TProgmemRGBGradientPalette_byte rgi_15_gp[] {
+    0,   4,  1, 31,
+   31,  55,  1, 16,
+   63, 197,  3,  7,
+   95,  59,  2, 17,
+  127,   6,  2, 34,
+  159,  39,  6, 33,
+  191, 112, 13, 32,
+  223,  56,  9, 35,
+  255,  22,  6, 38};
+
+extern const NSFastLED::TProgmemRGBGradientPalette_byte BlacK_Red_Magenta_Yellow_gp[] {
+    0,   0,  0,  0,
+   42,  42,  0,  0,
+   84, 255,  0,  0,
+  127, 255,  0, 45,
+  170, 255,  0,255,
+  212, 255, 55, 45,
+  255, 255,255,  0};
+
 // for effects that are palette based
 NSFastLED::CRGBPalette16 palettes[] = {
   Disorient_gp,
-  NSFastLED::CloudColors_p,
+  //NSFastLED::CloudColors_p,
   es_pinksplash_08_gp,
-  NSFastLED::ForestColors_p,
+  BlacK_Red_Magenta_Yellow_gp,
+  es_pinksplash_07_gp,
+  Sunset_Real_gp,
+  rgi_15_gp,
+  //NSFastLED::ForestColors_p,
   NSFastLED::OceanColors_p,
   NSFastLED::LavaColors_p,
 };
