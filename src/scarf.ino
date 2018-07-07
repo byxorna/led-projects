@@ -568,20 +568,13 @@ void loop() {
     }
   }
 
-  if (t_boot + BOOTUP_ANIM_DURATION_MS > t_now) {
-    // display a bootup pattern for a bit
-    pattern_bootup_with_sparkles(deckB, &deckSettingsB);
-    // do something different on B so we are ready for the fade
-    patternBank[deckSettingsB.pattern](deckA, &deckSettingsA);
-  } else {
-    // fill in patterns on both decks! we will crossfade master output later
-    // NOTE: only render to a deck if its "visible" through the crossfader
-    if ( !VJ_CROSSFADING_ENABLED || crossfadePosition < 1.0 ) {
-      patternBank[deckSettingsA.pattern](deckA, &deckSettingsA);
-    }
-    if ( VJ_CROSSFADING_ENABLED && crossfadePosition > 0 ) {
-      patternBank[deckSettingsB.pattern](deckB, &deckSettingsB);
-    }
+  // fill in patterns on both decks! we will crossfade master output later
+  // NOTE: only render to a deck if its "visible" through the crossfader
+  if ( !VJ_CROSSFADING_ENABLED || crossfadePosition < 1.0 ) {
+    patternBank[deckSettingsA.pattern](deckA, &deckSettingsA);
+  }
+  if ( VJ_CROSSFADING_ENABLED && crossfadePosition > 0 ) {
+    patternBank[deckSettingsB.pattern](deckB, &deckSettingsB);
   }
 
   // perform crossfading increment if we are mid pattern change
@@ -621,11 +614,15 @@ void loop() {
   for (int i = 0; i < NUM_LEDS; ++i) {
     if (VJ_CROSSFADING_ENABLED) {
       masterOutput[i] = deckA[i].lerp8(deckB[i], NSFastLED::fract8(255*crossfadePosition));
-      //masterOutput[i] = deckA[i];
     } else {
       masterOutput[i] = deckA[i];
     }
-  }
+    if (t_now < + BOOTUP_ANIM_DURATION_MS) {
+      // ramp intensity up slowly, so we fade in when turning on
+      int8_t bri8 = (uint8_t)((t_now*1.0)/BOOTUP_ANIM_DURATION_MS*255.0);
+      masterOutput[i] = masterOutput[i].fadeToBlackBy(255-bri8);
+    }
+ }
 
   gLED->setBrightness(GLOBAL_BRIGHTNESS);
   gLED->show();
