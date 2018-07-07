@@ -30,6 +30,9 @@ DeckSettings* deckSettingsAll[] = {&deckSettingsA, &deckSettingsB};
 
 typedef void (*FP)(NSFastLED::CRGB*, DeckSettings*);
 
+// Use qsuba for smooth pixel colouring and qsubd for non-smooth pixel colouring
+#define qsubd(x, b)  ((x>b)?b:0)
+#define qsuba(x, b)  ((x>b)?x-b:0)
 #define NUM_LEDS 102
 #define LEDS_PIN D6
 #define LED_TYPE NSFastLED::NEOPIXEL
@@ -177,6 +180,19 @@ void pattern_slow_pulse_with_sparkles(NSFastLED::CRGB* leds, DeckSettings* s) {
   }
 }
 
+void  pattern_plasma(NSFastLED::CRGB* leds, DeckSettings* s) {
+
+  int thisPhase = NSFastLED::beatsin8(6,-64,64);
+  int thatPhase = NSFastLED::beatsin8(7,-64,64);
+
+  for (int k=0; k<NUM_LEDS; k++) {
+
+    int colorIndex = NSFastLED::cubicwave8((k*23)+thisPhase)/2 + NSFastLED::cos8((k*15)+thatPhase)/2;
+    int thisBright = qsuba(colorIndex, NSFastLED::beatsin8(7,0,96));
+
+    leds[k] = ColorFromPalette(s->currentPalette, colorIndex, thisBright, currentBlending);
+  }
+}
 void pattern_cylon_eye(NSFastLED::CRGB* leds, DeckSettings* s) {
   // cylon eye is 4 pixels wide, +/++ base index
   // we map a 60bpm(1s) cycle into 0..num leds-1
@@ -292,7 +308,7 @@ void pattern_time_stretch_waves_rainbow(NSFastLED::CRGB* leds, DeckSettings* s){
 void pattern_from_palette(NSFastLED::CRGB* leds, DeckSettings* s) {
   uint8_t b = NSFastLED::beatsin8(4, 0, 255);
   for( int i = 0; i < NUM_LEDS; i++) {
-    leds[i] = ColorFromPalette(s->currentPalette, s->animationIndex + i + b, MAX_BRIGHTNESS, currentBlending);
+    leds[i] = NSFastLED::ColorFromPalette(s->currentPalette, s->animationIndex + i + b, MAX_BRIGHTNESS, currentBlending);
   }
   // slow down progression by 1/3
   if (t_now%3 == 0) {
@@ -359,6 +375,36 @@ void pattern_palette_waves(NSFastLED::CRGB* leds, DeckSettings* s) {
   }
 }
 
+/** update this with patterns you want to be cycled through **/
+#define NUM_PATTERNS sizeof(patternBank) / sizeof(FP)
+const FP patternBank[] = {
+  &pattern_plasma,
+  &pattern_from_palette,
+  &pattern_disorient_palette_sparkles,
+  &pattern_slow_pulse_with_sparkles,
+  &pattern_palette_waves,
+  &pattern_rainbow_waves_with_sparkles,
+};
+
+
+
+void randomPattern(DeckSettings* deck, DeckSettings* otherDeck) {
+  uint8_t old = deck->pattern;
+  while (deck->pattern == old || deck->pattern == otherDeck->pattern) {
+    deck->pattern = NSFastLED::random8(0, NUM_PATTERNS);
+  }
+  deck->tPatternStart = t_now;
+}
+
+void randomPalette(DeckSettings* deck, DeckSettings* otherDeck) {
+  uint8_t old = deck->palette;
+  while (deck->palette == old || deck->palette == otherDeck->palette) {
+    deck->palette = NSFastLED::random8(0, PALETTES_COUNT);
+  }
+  deck->currentPalette = palettes[deck->palette];
+  deck->tPaletteStart = t_now;
+}
+
 // setup() runs once, when the device is first turned on.
 void setup() {
   t_now = millis();
@@ -375,9 +421,9 @@ void setup() {
     1,
     0.0,
     0,
-    1,
-    1,
-    palettes[1],
+    0,
+    0,
+    palettes[0],
     t_now,
     t_now,
   };
@@ -392,7 +438,10 @@ void setup() {
     t_now,
   };
 
-
+  randomPattern(&deckSettingsA, &deckSettingsB);
+  randomPalette(&deckSettingsA, &deckSettingsB);
+  randomPattern(&deckSettingsB, &deckSettingsA);
+  randomPalette(&deckSettingsB, &deckSettingsA);
 
   // led controller, data pin, clock pin, RGB type (RGB is already defined in particle)
   gLED = new NSFastLED::CFastLED();
@@ -406,17 +455,6 @@ void setup() {
 
   Serial.println("booted up");
 }
-
-/** update this with patterns you want to be cycled through **/
-#define NUM_PATTERNS sizeof(patternBank) / sizeof(FP)
-const FP patternBank[] = {
-  //&pattern_noise_rainbow,
-  &pattern_from_palette,
-  &pattern_disorient_palette_sparkles,
-  &pattern_slow_pulse_with_sparkles,
-  &pattern_palette_waves,
-  &pattern_rainbow_waves_with_sparkles,
-};
 
 void loop() {
   t_now = millis();
@@ -479,24 +517,16 @@ void loop() {
 
 
   // increment pattern every PATTERN_CHANGE_INTERVAL_MS, but not when a deck is active!
-  if (AUTO_PATTERN_CHANGE && !crossfadeInProgress) {
-    if (t_now > deckSettingsA.tPatternStart+PATTERN_CHANGE_INTERVAL_MS) {
+  if (AUTO_PATTERN_CHANGE) {
+    if (t_now > deckSettingsA.tPatternStart+PATTERN_CHANGE_INTERVAL_MS && !crossfadeInProgress) {
       if (crossfadePosition == 1.0) {
-        deckSettingsA.pattern++;
-        deckSettingsA.tPatternStart = t_now;
-        if (deckSettingsA.pattern >= NUM_PATTERNS) {
-          deckSettingsA.pattern = 0;
-        }
+        randomPattern(&deckSettingsA, &deckSettingsB);
         Serial.printlnf("deckA.pattern=%d", deckSettingsA.pattern);
       }
     }
-    if (t_now > deckSettingsB.tPatternStart+PATTERN_CHANGE_INTERVAL_MS) {
+    if (t_now > deckSettingsB.tPatternStart+PATTERN_CHANGE_INTERVAL_MS && !crossfadeInProgress) {
       if (crossfadePosition == 0.0) {
-        deckSettingsB.pattern++;
-        deckSettingsB.tPatternStart = t_now;
-        if (deckSettingsB.pattern >= NUM_PATTERNS) {
-          deckSettingsB.pattern = 0;
-        }
+        randomPattern(&deckSettingsB, &deckSettingsA);
         Serial.printlnf("deckB.pattern=%d", deckSettingsB.pattern);
       }
     }
@@ -505,15 +535,12 @@ void loop() {
   // increment palette every PALETTE_CHANGE_INTERVAL_MS, but not when crossfading!
   if (AUTO_CHANGE_PALETTE && !crossfadeInProgress) {
     for (int x = 0; x < VJ_NUM_DECKS ; x++){
+      int xOther = (x == 0) ? 1 : 0;
       DeckSettings* deck = deckSettingsAll[x];
-      if ((deck->crossfadePositionActive != crossfadePosition) && 
-        (deck->tPaletteStart + PALETTE_CHANGE_INTERVAL_MS < t_now)) {
-        deck->palette++;
-        if (deck->palette >= PALETTES_COUNT) {
-          deck->palette = 0;
-        }
-        deck->currentPalette = palettes[deck->palette];
-        deck->tPaletteStart = t_now;
+      DeckSettings* otherdeck = deckSettingsAll[xOther];
+      if ((deck->crossfadePositionActive != crossfadePosition) &&
+          (deck->tPaletteStart + PALETTE_CHANGE_INTERVAL_MS < t_now)) {
+        randomPalette(deck, otherdeck);
         Serial.printlnf("deck%d.palette=%d", deck->label, deck->palette);
       }
     }
