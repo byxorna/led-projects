@@ -47,7 +47,7 @@ uint8_t BRIGHTNESS_INDEX = 2;
 #define PATTERN_CHANGE_INTERVAL_MS 30000
 #define PALETTE_CHANGE_INTERVAL_MS 30000
 #define VJ_CROSSFADING_ENABLED 1
-#define VJ_CROSSFADE_DURATION_MS 3000
+#define VJ_CROSSFADE_DURATION_MS 6000
 #define VJ_NUM_DECKS 2
 // switch between deck a and b with this interval
 #define VJ_DECK_SWITCH_INTERVAL_MS 15000
@@ -180,6 +180,26 @@ void pattern_slow_pulse_with_sparkles(NSFastLED::CRGB* leds, DeckSettings* s) {
   }
 }
 
+/*vars for pattern_phase_shift_palette*/
+int wave1=0;
+void pattern_phase_shift_palette(NSFastLED::CRGB* leds, DeckSettings* s) {
+  // phase shift
+  wave1 += 8;
+  int phase2 = NSFastLED::beatsin8(7,-64,64);
+
+  for (int k=0; k<NUM_LEDS; k++) {
+    int phase1 = NSFastLED::sin8(3*k + wave1/128);
+    int colorIndex = NSFastLED::cubicwave8((k)+phase1)/2 + NSFastLED::cos8((k*3)+phase2)/2;
+
+    //int bri8 = NSFastLED::cubicwave8(t_now/10.0 + k*10.0); // nice pulsy one direction intensity modulator
+    // generate undulating intensity phases
+    int bri8 = NSFastLED::cubicwave8(t_now/10.0 + NSFastLED::cubicwave8(k*10.0));
+
+    //Serial.printlnf("%d %d", k, bri8);
+    leds[k] = ColorFromPalette(s->currentPalette, colorIndex, bri8, currentBlending);
+  }
+}
+
 void  pattern_plasma(NSFastLED::CRGB* leds, DeckSettings* s) {
 
   int thisPhase = NSFastLED::beatsin8(6,-64,64);
@@ -188,7 +208,8 @@ void  pattern_plasma(NSFastLED::CRGB* leds, DeckSettings* s) {
   for (int k=0; k<NUM_LEDS; k++) {
 
     int colorIndex = NSFastLED::cubicwave8((k*23)+thisPhase)/2 + NSFastLED::cos8((k*15)+thatPhase)/2;
-    int thisBright = qsuba(colorIndex, NSFastLED::beatsin8(7,0,96));
+    int thisBright = NSFastLED::cubicwave8(t_now/10.0 + k*10.0); // nice pulsy one direction intensity modulator
+    //int thisBright = qsuba(colorIndex, NSFastLED::beatsin8(7,0,96));
 
     leds[k] = ColorFromPalette(s->currentPalette, colorIndex, thisBright, currentBlending);
   }
@@ -378,6 +399,7 @@ void pattern_palette_waves(NSFastLED::CRGB* leds, DeckSettings* s) {
 /** update this with patterns you want to be cycled through **/
 #define NUM_PATTERNS sizeof(patternBank) / sizeof(FP)
 const FP patternBank[] = {
+  &pattern_phase_shift_palette,
   &pattern_plasma,
   &pattern_from_palette,
   &pattern_disorient_palette_sparkles,
@@ -548,10 +570,9 @@ void loop() {
 
   if (t_boot + BOOTUP_ANIM_DURATION_MS > t_now) {
     // display a bootup pattern for a bit
-    pattern_bootup_with_sparkles(deckA, &deckSettingsA);
-    for (int i = 0; i < NUM_LEDS; ++i) {
-      deckB[i] = deckA[i];
-    }
+    pattern_bootup_with_sparkles(deckB, &deckSettingsB);
+    // do something different on B so we are ready for the fade
+    patternBank[deckSettingsB.pattern](deckA, &deckSettingsA);
   } else {
     // fill in patterns on both decks! we will crossfade master output later
     // NOTE: only render to a deck if its "visible" through the crossfader
