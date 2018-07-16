@@ -270,7 +270,37 @@ void pattern_phase_shift_palette(Deck* s) {
     int bri8 = NSFastLED::cubicwave8(t_now/10.0 + NSFastLED::cubicwave8(k*10.0));
 
     //Serial.printlnf("%d %d", k, bri8);
-    s->leds[k] = ColorFromPalette(s->currentPalette, colorIndex, bri8, currentBlending);
+    s->leds[k] = NSFastLED::ColorFromPalette(s->currentPalette, colorIndex, bri8, currentBlending);
+  }
+}
+
+// TODO: make multiple meteors going different directions
+void pattern_meteor_rain(Deck *s) {
+  byte meteorSize = 10;
+  byte meteorTrailDecay = 64;
+  boolean meteorRandomDecay = true;
+
+  // undulate our index into our palette
+  int thisPhase = NSFastLED::beatsin8(6,-64,64);
+  int thatPhase = NSFastLED::beatsin8(7,-64,64);
+  int colorIndex = NSFastLED::cubicwave8((t_now*23)+thisPhase)/2 + NSFastLED::cos8((t_now*15)+thatPhase)/2;
+
+  for(int i = 0; i < NUM_LEDS+NUM_LEDS; i++) {
+
+    // fade brightness all LEDs one step
+    for(int j=0; j<NUM_LEDS; j++) {
+      if( (!meteorRandomDecay) || (random(10)>5) ) {
+        s->leds[j].fadeToBlackBy(meteorTrailDecay);
+      }
+    }
+
+    // draw meteor
+    for(int j = 0; j < meteorSize; j++) {
+      if( (i-j < NUM_LEDS) && (i-j >= 0) ) {
+        s->leds[i-j] = ColorFromPalette(s->currentPalette, colorIndex, 255, currentBlending);
+      }
+    }
+
   }
 }
 
@@ -474,6 +504,7 @@ const DrawFunction patternBank[] = {
   &pattern_slow_pulse_with_sparkles,
   &pattern_palette_waves,
   &pattern_rainbow_waves_with_sparkles,
+  &pattern_meteor_rain,
 };
 
 
