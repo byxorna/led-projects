@@ -679,7 +679,14 @@ void loop() {
       int8_t bri8 = (uint8_t)((t_now*1.0)/BOOTUP_ANIM_DURATION_MS*255.0);
       masterOutput[i] = masterOutput[i].fadeToBlackBy(255-bri8);
     }
- }
+  }
+
+  // TODO: perform effect convolution here!
+  // leds[i] += CRGB(20,0,0);
+  // leds[i].maximizeBrightness();
+  // leds[i].fadeLightBy(xx)
+  // constrain colors to minimum |= CRGB(x,y,z);
+  // make effects that change some parameters like color, hue saturation, brightness, or glitch in the other frames
 
   gLED->setBrightness(GLOBAL_BRIGHTNESS);
   gLED->show();
