@@ -5,6 +5,7 @@
 * Date: idklol
 */
 
+#pragma once
 #include "Particle.h"
 #include "FastLED.h"
 
