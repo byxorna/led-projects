@@ -152,7 +152,7 @@ int wave1=0;
 void pattern_phase_shift_palette(Deck* s) {
   // phase shift
   wave1 += 8;
-  int phase2 = NSFastLED::beatsin8(7,-64,64);
+  int phase2 = NSFastLED::beatsin88(7*256,-64,64);
 
   for (int k=0; k<NUM_LEDS; k++) {
     int phase1 = NSFastLED::sin8(3*k + wave1/128);
@@ -169,68 +169,31 @@ void pattern_phase_shift_palette(Deck* s) {
 
 void  pattern_plasma(Deck* s) {
 
-  int thisPhase = NSFastLED::beatsin8(6,-64,64);
-  int thatPhase = NSFastLED::beatsin8(7,-64,64);
+  int thisPhase = NSFastLED::beatsin88(256*2,-64,64);
+  int thatPhase = NSFastLED::beatsin88(237,-64,64);
 
   for (int k=0; k<NUM_LEDS; k++) {
 
-    int colorIndex = NSFastLED::cubicwave8((k*23)+thisPhase)/2 + NSFastLED::cos8((k*15)+thatPhase)/2;
+    int colorIndex = NSFastLED::cubicwave8((k*17)+thisPhase)/2 + NSFastLED::cos8((k*15)+thatPhase)/2;
     int thisBright = NSFastLED::cubicwave8(t_now/10.0 + k*10.0); // nice pulsy one direction intensity modulator
     //int thisBright = qsuba(colorIndex, NSFastLED::beatsin8(7,0,96));
 
     s->leds[k] = ColorFromPalette(s->currentPalette, colorIndex, thisBright, currentBlending);
   }
 }
-void pattern_cylon_eye(Deck* s) {
-  // cylon eye is 4 pixels wide, +/++ base index
-  // we map a 60bpm(1s) cycle into 0..num leds-1
-  uint8_t h = NSFastLED::beatsin8(8, 0, 255);
-  NSFastLED::CHSV hsv_led = NSFastLED::CHSV(h, 255, 255);
-  NSFastLED::CRGB rgb_led;
-  hsv2rgb_rainbow(hsv_led, rgb_led);
-  uint8_t mappedIndex = NSFastLED::beatsin8(60, 0, NUM_LEDS-1);
+
+void effect_random_decay(Deck* s) {
   for(int i = 0; i < NUM_LEDS; ++i) {
-    if (mappedIndex == i) {
-      s->leds[i] = rgb_led;
-    } else if (NSFastLED::addmod8(mappedIndex, 1, 255) == i) {
-      s->leds[i] = rgb_led;
-    } else if (NSFastLED::addmod8(mappedIndex, 2, 255) == i) {
-      s->leds[i] = rgb_led;
-    } else if (NSFastLED::addmod8(mappedIndex, 3, 255) == i) {
-      s->leds[i] = rgb_led;
-    } else {
-      s->leds[i] = NSFastLED::CRGB::Black;
+    if (random(NUM_LEDS) < NUM_LEDS/4) {
+      s->leds[i].fadeToBlackBy(random(5));
     }
   }
 }
 
-/*
-// vary intensity with noise function
-void pattern_noise_rainbow(NSFastLED::CRGB* leds, Deck* s) {
-  uint8_t baseHue = NSFastLED::beatsin8(3, 0, 255);
-  uint8_t iHue = 0;
-  for(int i = 0; i < NUM_LEDS; ++i) {
-    iHue = NSFastLED::addmod8(baseHue, 1, 255);
-    NSFastLED::CHSV hsv_led = NSFastLED::CHSV(iHue, 255, noise[i]);
-    NSFastLED::CRGB rgb_led;
-    hsv2rgb_rainbow(hsv_led, rgb_led);
-    leds[i] = rgb_led;
-  }
-}
-*/
-
-void pattern_bootup_with_sparkles(NSFastLED::CRGB* leds, Deck* s) {
-  uint8_t baseHue = NSFastLED::beatsin8(15, 0, 255);
-  uint8_t iHue = 0;
+void effect_sparkles(Deck* s) {
   for(int i = 0; i < NUM_LEDS; ++i) {
     if (random(NUM_LEDS) == 0) {
       s->leds[i] = NSFastLED::CRGB::White;
-    } else {
-      iHue = NSFastLED::addmod8(baseHue, 1, 255);
-      NSFastLED::CHSV hsv_led = NSFastLED::CHSV(iHue, 255, 255);
-      NSFastLED::CRGB rgb_led;
-      hsv2rgb_rainbow(hsv_led, rgb_led);
-      s->leds[i] = rgb_led;
     }
   }
 }
@@ -270,28 +233,6 @@ void pattern_disorient_palette_sparkles(Deck* s) {
     s->animationIndex = NSFastLED::addmod8(s->animationIndex, 1, 255);
   }
 }
-
-// undulates a color wave, an offset into that wave, and intensity of the led
-/* im bad at programming and cant figure out the noise functions
-void pattern_time_stretch_waves_rainbow(NSFastLED::CRGB* leds, Deck* s){
-  float speedScale = .1;
-  float speedColor = 0.5;
-  for( int i = 0; i < NUM_LEDS; i++) {
-    uint8_t stretchOffset = map8( inoise8((t_now + i)), 0, 16);
-    //uint8_t hue = inoise8(t_now, random16(), i);
-    float hraw = t_now*speedColor/1000.0 + 1.0*i/10.0;
-    uint8_t hue = cos8(hraw);
-    uint8_t intensity = cos8(t_now*speedScale + 1.0);
-    //Serial.printlnf("%3d %d %d",i, hue, intensity);
-    Serial.printlnf("%3d %3d %3d",i, hue, hraw);
-
-    NSFastLED::CRGB rgb_led;
-    NSFastLED::CHSV hsv_led = NSFastLED::CHSV(hue, 255, intensity);
-    hsv2rgb_rainbow(hsv_led, rgb_led);
-    leds[i] = rgb_led;
-  }
-}
-*/
 
 void pattern_from_palette(Deck* s) {
   uint8_t b = NSFastLED::beatsin8(4, 0, 255);
@@ -360,13 +301,22 @@ void pattern_palette_waves(Deck* s) {
 /** update this with patterns you want to be cycled through **/
 #define NUM_PATTERNS sizeof(patternBank) / sizeof(DrawFunction)
 const DrawFunction patternBank[] = {
+  &pattern_palette_waves,
+  &pattern_slow_pulse_with_sparkles,
   &pattern_phase_shift_palette,
   &pattern_plasma,
   &pattern_from_palette,
   &pattern_disorient_palette_sparkles,
-  &pattern_slow_pulse_with_sparkles,
-  &pattern_palette_waves,
   &pattern_rainbow_waves_with_sparkles,
+};
+
+#define NUM_EFFECTS sizeof(effectsBank) / sizeof(EffectFunction)
+const EffectFunction effectsBank[] = {
+  NULL,
+  &effect_sparkles,
+  NULL,
+  &effect_random_decay,
+  NULL,
 };
 
 
