@@ -1,6 +1,12 @@
-#pragma once
+#ifndef _PALETTES_H_
+#define _PALETTES_H_
+
+#ifndef _PARTICLE_H_
 #include "Particle.h"
+#endif
+#ifndef _FASTLED_H_
 #include "FastLED.h"
+#endif
 
 /* custom color palettes */
 // orange 255,102,0 FF6600
@@ -79,3 +85,20 @@ extern const NSFastLED::TProgmemRGBGradientPalette_byte BlacK_Red_Magenta_Yellow
   212, 255, 55, 45,
   255, 255,255,  0};
 
+
+// for effects that are palette based
+NSFastLED::CRGBPalette16 palettes[] = {
+  Disorient_gp,
+  //NSFastLED::CloudColors_p,
+  es_pinksplash_08_gp,
+  BlacK_Red_Magenta_Yellow_gp,
+  es_pinksplash_07_gp,
+  Sunset_Real_gp,
+  rgi_15_gp,
+  //NSFastLED::ForestColors_p,
+  NSFastLED::OceanColors_p,
+  NSFastLED::LavaColors_p,
+};
+#define PALETTES_COUNT (sizeof(palettes)/sizeof(*palettes))
+
+#endif

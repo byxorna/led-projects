@@ -1,15 +1,14 @@
-/*
-* Project d18-scarf
-* Description: LEDs for DI8ORIENT scarf
-* Author: Gabe Conradi
-* Date: idklol
-*/
+#ifndef _STRUCTS_H_
+#define _STRUCTS_H_
 
-#pragma once
+#ifndef _PARTICLE_H_
 #include "Particle.h"
+#endif
+#ifndef _FASTLED_H_
 #include "FastLED.h"
+#endif
 
-struct Deck {
+typedef struct Deck {
   uint8_t label;
   float crossfadePositionActive;
   uint8_t pattern;
@@ -19,18 +18,13 @@ struct Deck {
   unsigned long tPatternStart;  // time last pattern changed
   unsigned long tPaletteStart;  // time last palette changed
   NSFastLED::CRGB* leds;
-};
+} Deck;
 
-struct Output {
+typedef struct Output {
   NSFastLED::CRGB* leds;
-};
+} Output;
 
-typedef void (*DrawFunction)(Deck*);
-typedef void (*EffectFunction)(Deck*);
-// how 2 decks mix together into an output
-typedef void (*MixerFunction)(Deck*, Deck*, Output*);
-
-struct Mixer {
+typedef struct Mixer {
   float crossfadePosition;
   int crossfadeDirection;
   uint8_t crossfadeInProgress;
@@ -38,5 +32,6 @@ struct Mixer {
   Deck* a;
   Deck* b;
   Output* out;
-};
+} Mixer;
 
+#endif

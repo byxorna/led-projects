@@ -5,22 +5,6 @@
 * Date: idklol
 */
 
-#include "Particle.h"
-#include "FastLED.h"
-#include "structs.h"
-#include "palettes.h"
-
-// NSFastLED
-//NOPE! FASTLED_USING_NAMESPACE;
-SYSTEM_MODE(SEMI_AUTOMATIC);
-// SYSTEM_THREAD(ENABLED);
-
-Output MasterOutput;
-Deck DeckA;
-Deck DeckB;
-Deck* DeckAll[] = {&DeckA, &DeckB};
-Mixer mainMixer;
-
 // Use qsuba for smooth pixel colouring and qsubd for non-smooth pixel colouring
 #define qsubd(x, b)  ((x>b)?b:0)
 #define qsuba(x, b)  ((x>b)?x-b:0)
@@ -29,10 +13,6 @@ Mixer mainMixer;
 #define LED_TYPE NSFastLED::NEOPIXEL
 #define UPDATES_PER_SECOND 120
 #define MAX_BRIGHTNESS 255
-uint8_t BRIGHTNESS_VALUES[] = {255, 180, 110, 80, 65, 40};
-uint8_t BRIGHTNESS_INDEX = 3;
-#define GLOBAL_BRIGHTNESS BRIGHTNESS_VALUES[BRIGHTNESS_INDEX]
-#define BRIGHTNESS_COUNT sizeof(BRIGHTNESS_VALUES)/sizeof(uint8_t)
 #define MAX_SATURATION 255
 #define BOOTUP_ANIM_DURATION_MS 4000
 #define PATTERN_CHANGE_INTERVAL_MS 30000
@@ -43,8 +23,41 @@ uint8_t BRIGHTNESS_INDEX = 3;
 // switch between deck a and b with this interval
 #define VJ_DECK_SWITCH_INTERVAL_MS 15000
 #define AUTO_CHANGE_PALETTE 1
-bool AUTO_PATTERN_CHANGE = true;
 #define SETUP_BUTTON_HOLD_DURATION_MS 800
+
+#ifndef _PARTICLE_H_
+#include "Particle.h"
+#endif
+#ifndef _FASTLED_H_
+#include "FastLED.h"
+#endif
+#ifndef _STRUCTS_H_
+#include "structs.h"
+#endif
+#ifndef _PALETTES_H_
+#include "palettes.h"
+#endif
+#ifndef _EFFECTS_H_
+#include "effects.h"
+#endif
+
+SYSTEM_MODE(SEMI_AUTOMATIC);
+
+Output MasterOutput;
+Deck DeckA;
+Deck DeckB;
+Deck* DeckAll[] = {&DeckA, &DeckB};
+Mixer mainMixer;
+
+typedef void (*DrawFunction)(Deck*);
+// how 2 decks mix together into an output
+typedef void (*MixerFunction)(Deck*, Deck*, Output*);
+
+uint8_t BRIGHTNESS_VALUES[] = {255, 180, 110, 80, 65, 40};
+uint8_t BRIGHTNESS_INDEX = 3;
+#define GLOBAL_BRIGHTNESS BRIGHTNESS_VALUES[BRIGHTNESS_INDEX]
+#define BRIGHTNESS_COUNT sizeof(BRIGHTNESS_VALUES)/sizeof(uint8_t)
+bool AUTO_PATTERN_CHANGE = true;
 
 unsigned long t_now;                // time now in each loop iteration
 unsigned long t_boot;               // time at bootup
@@ -110,26 +123,28 @@ void fillnoise8() {
 
 NSFastLED::CFastLED* gLED; // global CFastLED object
 
-// for effects that are palette based
-NSFastLED::CRGBPalette16 palettes[] = {
-  Disorient_gp,
-  //NSFastLED::CloudColors_p,
-  es_pinksplash_08_gp,
-  BlacK_Red_Magenta_Yellow_gp,
-  es_pinksplash_07_gp,
-  Sunset_Real_gp,
-  rgi_15_gp,
-  //NSFastLED::ForestColors_p,
-  NSFastLED::OceanColors_p,
-  NSFastLED::LavaColors_p,
-};
-#define PALETTES_COUNT (sizeof(palettes)/sizeof(*palettes))
-
-
 NSFastLED::TBlendType currentBlending = NSFastLED::LINEARBLEND;
 NSFastLED::CRGB leds[NUM_LEDS];
 NSFastLED::CRGB ledsA[NUM_LEDS];
 NSFastLED::CRGB ledsB[NUM_LEDS];
+
+/*
+TODO WTF FUCK WHY DOES HAVING `struct Deck;` in here make this compile, and without
+everything is broken with 
+src/scarf.cpp:31:39: error: variable or field 'pattern_slow_pulse_with_sparkles' declared void
+ void pattern_slow_pulse_with_sparkles(Deck* s);
+                                       ^
+src/scarf.cpp:31:39: error: 'Deck' was not declared in this scope
+src/scarf.cpp:31:45: error: 's' was not declared in this scope
+ void pattern_slow_pulse_with_sparkles(Deck* s);
+                                             ^
+src/scarf.cpp:32:34: error: variable or field 'pattern_phase_shift_palette' declared void
+ void pattern_phase_shift_palette(Deck* s);
+                                  ^
+src/scarf.cpp:32:34: error: 'Deck' was not declared in this scope
+src/scarf.cpp:32:40: error: 's' was not declared in this scope
+*/
+struct Deck;
 
 void pattern_slow_pulse_with_sparkles(Deck* s) {
   // pick a color, and pulse it 
@@ -179,22 +194,6 @@ void  pattern_plasma(Deck* s) {
     //int thisBright = qsuba(colorIndex, NSFastLED::beatsin8(7,0,96));
 
     s->leds[k] = ColorFromPalette(s->currentPalette, colorIndex, thisBright, currentBlending);
-  }
-}
-
-void effect_random_decay(Deck* s) {
-  for(int i = 0; i < NUM_LEDS; ++i) {
-    if (random(NUM_LEDS) < NUM_LEDS/4) {
-      s->leds[i].fadeToBlackBy(random(5));
-    }
-  }
-}
-
-void effect_sparkles(Deck* s) {
-  for(int i = 0; i < NUM_LEDS; ++i) {
-    if (random(NUM_LEDS) == 0) {
-      s->leds[i] = NSFastLED::CRGB::White;
-    }
   }
 }
 
@@ -309,17 +308,6 @@ const DrawFunction patternBank[] = {
   &pattern_disorient_palette_sparkles,
   &pattern_rainbow_waves_with_sparkles,
 };
-
-#define NUM_EFFECTS sizeof(effectsBank) / sizeof(EffectFunction)
-const EffectFunction effectsBank[] = {
-  NULL,
-  &effect_sparkles,
-  NULL,
-  &effect_random_decay,
-  NULL,
-};
-
-
 
 void randomPattern(Deck* deck, Deck* otherDeck) {
   uint8_t old = deck->pattern;
