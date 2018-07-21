@@ -66,6 +66,8 @@ unsigned long t_boot;               // time at bootup
 uint8_t button_state = 0;
 unsigned long button_timer = 0;
 
+#define FILL_NOISE false
+#ifdef FILL_NOISE
 static uint16_t x = NSFastLED::random16(); // x is index into pixel strip
 //static uint16_t y = NSFastLED::random16(); // y is the time variable
 static uint16_t z = NSFastLED::random16();
@@ -81,7 +83,6 @@ uint16_t noisespeed = 5; // speed is set dynamically once we've started up
 uint16_t noisescale = 7; // scale is set dynamically once we've started up
 // This is the array that we keep our computed noise values in (only 1d)
 uint8_t noise[NUM_LEDS];
-#define FILL_NOISE false
 
 // Fill the x/y array of 8-bit noise values using the inoise8 function.
 void fillnoise8() {
@@ -119,6 +120,7 @@ void fillnoise8() {
   x += noisespeed / 8;
   //y -= noisespeed / 16;
 }
+#endif
 
 
 NSFastLED::CFastLED* gLED; // global CFastLED object
@@ -145,6 +147,7 @@ src/scarf.cpp:32:34: error: 'Deck' was not declared in this scope
 src/scarf.cpp:32:40: error: 's' was not declared in this scope
 */
 struct Deck;
+struct Mixer;
 
 void pattern_slow_pulse_with_sparkles(Deck* s) {
   // pick a color, and pulse it 
@@ -309,6 +312,24 @@ const DrawFunction patternBank[] = {
   &pattern_rainbow_waves_with_sparkles,
 };
 
+#define NUM_EFFECTS sizeof(effectBank) / sizeof(EffectFunction)
+const EffectFunction effectBank[] = {
+  NULL,
+  &effect_sparkles,
+  NULL,
+  &effect_random_decay,
+  NULL,
+};
+
+void randomEffect(Mixer* m) {
+  uint8_t old = m->fxEffectIndex;
+  while (m->fxEffectIndex == old) {
+    // pick a new effect that isnt the old effect index
+    m->fxEffectIndex = NSFastLED::random8(0, NUM_EFFECTS);
+  }
+  m->tFxEffectStart = t_now;
+}
+
 void randomPattern(Deck* deck, Deck* otherDeck) {
   uint8_t old = deck->pattern;
   while (deck->pattern == old || deck->pattern == otherDeck->pattern) {
@@ -387,6 +408,11 @@ void setup() {
     -1, // start fading direction going B -> A
     0, // crossfade in progress
     0, // last crossfade
+    0,  // fx effect index in effectBank
+    0,  // fx d/w
+    0,  // fx p1
+    0,  // fx p2
+    0,  // time fx effect started
     &DeckA,
     &DeckB,
     &MasterOutput,
@@ -396,6 +422,7 @@ void setup() {
   randomPalette(&DeckA, &DeckB);
   randomPattern(&DeckB, &DeckA);
   randomPalette(&DeckB, &DeckA);
+  randomEffect(&mainMixer);
 
   // led controller, data pin, clock pin, RGB type (RGB is already defined in particle)
   gLED = new NSFastLED::CFastLED();
@@ -411,10 +438,12 @@ void setup() {
 void loop() {
   t_now = millis();
 
+#ifdef FILL_NOISE
   if (FILL_NOISE) {
     // fill noise array
     fillnoise8();
   }
+#endif
 
   // handle user interaction with reset button
   if (HAL_Core_Mode_Button_Pressed(SETUP_BUTTON_HOLD_DURATION_MS)) {

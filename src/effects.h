@@ -29,13 +29,4 @@ void effect_sparkles(Deck* s, uint8_t dw, uint8_t p1, uint8_t p2) {
   }
 }
 
-#define NUM_EFFECTS sizeof(effectsBank) / sizeof(EffectFunction)
-const EffectFunction effectsBank[] = {
-  NULL,
-  &effect_sparkles,
-  NULL,
-  &effect_random_decay,
-  NULL,
-};
-
 #endif

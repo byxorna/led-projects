@@ -29,6 +29,11 @@ typedef struct Mixer {
   int crossfadeDirection;
   uint8_t crossfadeInProgress;
   unsigned long tLastCrossfade;
+  uint8_t fxEffectIndex;    // which effect in effectBank is active (postfader)
+  uint8_t fxDryWet;         // fx1 d/w
+  uint8_t fxParam1;         // fx1 param 1
+  uint8_t fxParam2;         // fx1 param 2
+  unsigned long tFxEffectStart; // when the last effect was changed
   Deck* a;
   Deck* b;
   Output* out;
