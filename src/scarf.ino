@@ -17,6 +17,7 @@
 #define BOOTUP_ANIM_DURATION_MS 4000
 #define PATTERN_CHANGE_INTERVAL_MS 30000
 #define PALETTE_CHANGE_INTERVAL_MS 30000
+#define EFFECT_CHANGE_INTERVAL_MS 20000
 #define VJ_CROSSFADING_ENABLED 1
 #define VJ_CROSSFADE_DURATION_MS 6000
 #define VJ_NUM_DECKS 2
@@ -148,6 +149,12 @@ src/scarf.cpp:32:40: error: 's' was not declared in this scope
 */
 struct Deck;
 struct Mixer;
+
+void pattern_white_test(Deck* s) {
+  for( int i = 0; i < NUM_LEDS; i++) {
+    s->leds[i] = NSFastLED::CRGB::White;
+  }
+}
 
 void pattern_slow_pulse_with_sparkles(Deck* s) {
   // pick a color, and pulse it 
@@ -315,11 +322,24 @@ const DrawFunction patternBank[] = {
 #define NUM_EFFECTS sizeof(effectBank) / sizeof(EffectFunction)
 const EffectFunction effectBank[] = {
   NULL,
-  &effect_sparkles,
   NULL,
-  &effect_random_decay,
   NULL,
+  NULL,
+  //&effect_sparkles,
+  //NULL,
+  //&effect_random_decay,
+  //NULL,
+  //&effect_wave_decay,
+  //NULL,
 };
+
+// change dw/p1/p2 on some period
+void stepFxParams(Mixer* m) {
+  m->fxDryWet = NSFastLED::beatsin8(12, 0, 255);
+  m->fxParam1 = NSFastLED::beatsin8(12, 0, 255, 0, m->fxDryWet );
+  m->fxParam2 = NSFastLED::beatsin8(19, 0, 255, 0, 0);
+  //Serial.printlnf("dw=%d p1=%d p2=%d", m->fxDryWet, m->fxParam1, m->fxParam2);
+}
 
 void randomEffect(Mixer* m) {
   uint8_t old = m->fxEffectIndex;
@@ -527,6 +547,15 @@ void loop() {
     }
   }
 
+  if (!mainMixer.crossfadeInProgress) {
+    if (mainMixer.fxDryWet == 0 && mainMixer.tFxEffectStart + EFFECT_CHANGE_INTERVAL_MS < t_now) {
+      randomEffect(&mainMixer);
+      Serial.printlnf("mixer.effect=%d (%p)", mainMixer.fxEffectIndex, effectBank[mainMixer.fxEffectIndex]);
+    }
+  }
+  stepFxParams(&mainMixer);
+
+
   // fill in patterns on both decks! we will crossfade master output later
   // NOTE: only render to a deck if its "visible" through the crossfader
   if ( !VJ_CROSSFADING_ENABLED || mainMixer.crossfadePosition < 1.0 ) {
@@ -569,12 +598,9 @@ void loop() {
   // perform crossfading
   mixer_crossfade_blend(&mainMixer, &DeckA, &DeckB, &MasterOutput);
 
-  // TODO: perform effect convolution here!
-  // leds[i] += CRGB(20,0,0);
-  // leds[i].maximizeBrightness();
-  // leds[i].fadeLightBy(xx)
-  // constrain colors to minimum |= CRGB(x,y,z);
-  // make effects that change some parameters like color, hue saturation, brightness, or glitch in the other frames
+  if (effectBank[mainMixer.fxEffectIndex] != NULL) {
+    effectBank[mainMixer.fxEffectIndex](&MasterOutput, mainMixer.fxDryWet, mainMixer.fxParam1, mainMixer.fxParam2);
+  }
 
   gLED->setBrightness(GLOBAL_BRIGHTNESS);
   gLED->show();
