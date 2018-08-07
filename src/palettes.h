@@ -19,6 +19,72 @@ extern const NSFastLED::TProgmemRGBGradientPalette_byte Disorient_gp[] = {
     208, 255, 111,  15,    // orange
     255, 255, 255, 255, }; // white
 
+// Gradient palette "bhw1_01_gp", originally from
+// http://soliton.vm.bytemark.co.uk/pub/cpt-city/bhw/bhw1/tn/bhw1_01.png.index.html
+// converted for FastLED with gammas (2.6, 2.2, 2.5)
+// Size: 12 bytes of program space.
+
+extern const NSFastLED::TProgmemRGBGradientPalette_byte  bhw1_01_gp [] {
+    0, 227,101,  3,
+  117, 194, 18, 19,
+  255,  92,  8,192};
+
+// Gradient palette "bhw1_04_gp", originally from
+// http://soliton.vm.bytemark.co.uk/pub/cpt-city/bhw/bhw1/tn/bhw1_04.png.index.html
+// converted for FastLED with gammas (2.6, 2.2, 2.5)
+// Size: 20 bytes of program space.
+
+extern const NSFastLED::TProgmemRGBGradientPalette_byte  bhw1_04_gp [] {
+    0, 229,227,  1,
+   15, 227,101,  3,
+  142,  40,  1, 80,
+  198,  17,  1, 79,
+  255,   0,  0, 45};
+
+// Gradient palette "bhw3_50_gp", originally from
+// http://soliton.vm.bytemark.co.uk/pub/cpt-city/bhw/bhw3/tn/bhw3_50.png.index.html
+// converted for FastLED with gammas (2.6, 2.2, 2.5)
+// Size: 36 bytes of program space.
+
+extern const NSFastLED::TProgmemRGBGradientPalette_byte  bhw3_50_gp [] {
+    0, 171,  1, 34,
+   25, 224, 29, 84,
+   58, 222, 70,228,
+   89, 227, 90, 59,
+  127, 255,136,125,
+  165, 227, 90, 59,
+  188, 222, 70,228,
+  216, 224, 29, 84,
+  255, 171,  1, 34};
+
+// Gradient palette "bhw3_52_gp", originally from
+// http://soliton.vm.bytemark.co.uk/pub/cpt-city/bhw/bhw3/tn/bhw3_52.png.index.html
+// converted for FastLED with gammas (2.6, 2.2, 2.5)
+// Size: 28 bytes of program space.
+
+extern const NSFastLED::TProgmemRGBGradientPalette_byte bhw3_52_gp [] {
+    0,  31,  1, 27,
+   45,  34,  1, 16,
+   99, 137,  5,  9,
+  132, 213,128, 10,
+  175, 199, 22,  1,
+  201, 199,  9,  6,
+  255,   1,  0,  1};
+
+// Gradient palette "bhw3_02_gp", originally from
+// http://soliton.vm.bytemark.co.uk/pub/cpt-city/bhw/bhw3/tn/bhw3_02.png.index.html
+// converted for FastLED with gammas (2.6, 2.2, 2.5)
+// Size: 24 bytes of program space.
+
+extern const NSFastLED::TProgmemRGBGradientPalette_byte bhw3_02_gp [] {
+    0, 121,  1,  1,
+   63, 255, 57,  1,
+  112, 255, 79, 25,
+  145, 255, 79, 25,
+  188, 244,146,  3,
+  255, 115, 14,  1};
+
+
 // https://gist.github.com/kriegsman/8281905786e8b2632aeb
 
 // Gradient palette "es_pinksplash_08_gp", originally from
@@ -86,17 +152,55 @@ extern const NSFastLED::TProgmemRGBGradientPalette_byte BlacK_Red_Magenta_Yellow
   255, 255,255,  0};
 
 
+// Gradient palette "Bad_Kitten_gp", originally from
+// http://soliton.vm.bytemark.co.uk/pub/cpt-city/colo/Bionic_Blender/tn/Bad_Kitten.png.index.html
+// converted for FastLED with gammas (2.6, 2.2, 2.5)
+// Size: 40 bytes of program space.
+
+extern const NSFastLED::TProgmemRGBGradientPalette_byte Bad_Kitten_gp[] {
+    0,   1,  1,  1,
+   86,   1,  1,  1,
+   86,  28,  2, 23,
+  102,  28,  2, 23,
+  102,  97,  3, 13,
+  117,  97,  3, 13,
+  117, 177, 12,  2,
+  132, 177, 12,  2,
+  132, 206, 79,  1,
+  255, 206, 79,  1};
+
+// Gradient palette "Lucy_in_the_Sky_gp", originally from
+// http://soliton.vm.bytemark.co.uk/pub/cpt-city/colo/vredeling/tn/Lucy_in_the_Sky.png.index.html
+// converted for FastLED with gammas (2.6, 2.2, 2.5)
+// Size: 40 bytes of program space.
+
+extern const NSFastLED::TProgmemRGBGradientPalette_byte Lucy_in_the_Sky_gp [] {
+    0, 175,  1, 44,
+   51, 175,  1, 44,
+   51, 194, 14, 35,
+  102, 194, 14, 35,
+  102, 213, 40, 27,
+  153, 213, 40, 27,
+  153, 234, 80, 21,
+  204, 234, 80, 21,
+  204, 255,136, 15,
+  255, 255,136, 15};
+
 // for effects that are palette based
 NSFastLED::CRGBPalette16 palettes[] = {
   Disorient_gp,
-  //NSFastLED::CloudColors_p,
+  Lucy_in_the_Sky_gp,
+  Bad_Kitten_gp,
   es_pinksplash_08_gp,
   BlacK_Red_Magenta_Yellow_gp,
   es_pinksplash_07_gp,
   Sunset_Real_gp,
   rgi_15_gp,
-  //NSFastLED::ForestColors_p,
-  NSFastLED::OceanColors_p,
+  bhw1_01_gp,
+  bhw1_04_gp,
+  bhw3_50_gp,
+  bhw3_52_gp,
+  bhw3_02_gp,
   NSFastLED::LavaColors_p,
 };
 #define PALETTES_COUNT (sizeof(palettes)/sizeof(*palettes))
