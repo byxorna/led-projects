@@ -314,6 +314,7 @@ const DrawFunction patternBank[] = {
   &pattern_slow_pulse_with_sparkles,
   &pattern_phase_shift_palette,
   &pattern_plasma,
+  &pattern_plasma,
   &pattern_from_palette,
   &pattern_disorient_palette_sparkles,
   &pattern_rainbow_waves_with_sparkles,
