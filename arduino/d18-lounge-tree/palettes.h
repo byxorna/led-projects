@@ -28,6 +28,16 @@ DEFINE_GRADIENT_PALETTE( es_pinksplash_07_gp ) {
   255, 232,  1,  5
 };
 
+DEFINE_GRADIENT_PALETTE( bhw2_sherbet2_gp ) {
+    0, 217,  1,  1,
+   35, 249, 43, 19,
+   71, 247,125,172,
+  109, 206,  2, 32,
+  163, 210, 23,  9,
+  211, 255,255,255,
+  232, 252,199, 88,
+  255, 206,115, 52};
+
 
 // Gradient palette "Lucy_in_the_Sky_gp", originally from
 // http://soliton.vm.bytemark.co.uk/pub/cpt-city/colo/vredeling/tn/Lucy_in_the_Sky.png.index.html
@@ -182,7 +192,7 @@ DEFINE_GRADIENT_PALETTE( bhw4_018_gp ) {
 CRGBPalette16 palettes[] = {
   //Disorient_gp,
   es_pinksplash_07_gp,
-  es_pinksplash_08_gp,
+  //es_pinksplash_08_gp,
   PuRd_08_gp,
   Lucy_in_the_Sky_gp,
   //Oranges_06_gp,
@@ -192,5 +202,6 @@ CRGBPalette16 palettes[] = {
   bhw4_040_gp,
   bhw4_098_gp,
   bhw4_058_gp,
+  bhw2_sherbet2_gp,
 };
 #define PALETTES_COUNT (sizeof(palettes)/sizeof(*palettes))

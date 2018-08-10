@@ -60,6 +60,46 @@ DEFINE_GRADIENT_PALETTE( BlacK_Red_Magenta_Yellow_gp ) {
   255, 255, 255,  0
 };
 
+// Gradient palette "bhw2_48_gp", originally from
+// http://soliton.vm.bytemark.co.uk/pub/cpt-city/bhw/bhw2/tn/bhw2_48.png.index.html
+// converted for FastLED with gammas (2.6, 2.2, 2.5)
+// Size: 28 bytes of program space.
+
+DEFINE_GRADIENT_PALETTE( bhw2_48_gp ) {
+    0,   0,  0,  8,
+   51,  20, 40,147,
+   61,  15,117,115,
+  109,  26,  3,186,
+  163,  78, 43,205,
+  211, 199, 17, 84,
+  255,  27,  1, 10};
+
+// Gradient palette "bhw2_50_gp", originally from
+// http://soliton.vm.bytemark.co.uk/pub/cpt-city/bhw/bhw2/tn/bhw2_50.png.index.html
+// converted for FastLED with gammas (2.6, 2.2, 2.5)
+// Size: 20 bytes of program space.
+
+DEFINE_GRADIENT_PALETTE( bhw2_50_gp ) {
+    0,   8,  2, 23,
+   84,  47,  7,102,
+  138,  16, 46,147,
+  173,   2,127,203,
+  255,   1,  7, 11};
+
+// Gradient palette "bhw2_sherbet2_gp", originally from
+// http://soliton.vm.bytemark.co.uk/pub/cpt-city/bhw/bhw2/tn/bhw2_sherbet2.png.index.html
+// converted for FastLED with gammas (2.6, 2.2, 2.5)
+// Size: 32 bytes of program space.
+
+DEFINE_GRADIENT_PALETTE( bhw2_sherbet2_gp ) {
+    0, 217,  1,  1,
+   35, 249, 43, 19,
+   71, 247,125,172,
+  109, 206,  2, 32,
+  163, 210, 23,  9,
+  211, 255,255,255,
+  232, 252,199, 88,
+  255, 206,115, 52};
 
 
 // Gradient palette "Lucy_in_the_Sky_gp", originally from
@@ -84,13 +124,14 @@ DEFINE_GRADIENT_PALETTE( Lucy_in_the_Sky_gp ) {
 // for effects that are palette based
 CRGBPalette16 palettes[] = {
   Disorient_gp,
-  Lucy_in_the_Sky_gp,  Lucy_in_the_Sky_gp,
   Lucy_in_the_Sky_gp,
   es_pinksplash_07_gp,
-  Sunset_Real_gp,
-  rgi_15_gp,
+  //rgi_15_gp,
   BlacK_Red_Magenta_Yellow_gp,
+  bhw2_48_gp,
+  bhw2_50_gp,
   es_pinksplash_08_gp,
   LavaColors_p,
+  bhw2_sherbet2_gp,
 };
 #define PALETTES_COUNT (sizeof(palettes)/sizeof(*palettes))

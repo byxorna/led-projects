@@ -44,7 +44,6 @@ unsigned long tLastCrossfade = 0;
 
 unsigned long t_now;                // time now in each loop iteration
 unsigned long t_boot;               // time at bootup
-
 TBlendType currentBlending = LINEARBLEND;
 
 
