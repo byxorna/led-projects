@@ -1,11 +1,17 @@
 # d18-scarf
 arduino code for particle photon driven scarf for DI8ORIENT 2018
 
+NOTE: arduino code for trinket pro 5v in `arduino/`, particle photon code in `src/`. Some random bits are in `arduino/` too, like:
+* lounge lighting background (more pornjy ambient stuff)
+* different scarf loadouts for diff people with custom patters+colors
+* some tree hacks for art installs last minute
+
 ## Features
 
 * patterns and palettes rotate in auto mode
 * interpolation between pattern decks produces smooth fades between pattern changes
-* manually change patterns by holding setup button for a few seconds
+  * behaves like VJing between 2 decks, and interpolates between diff patterns in real time for a very organic feel
+* manually change patterns or brightness by holding setup button for a few seconds (particle only)
 
 ## Adding Patterns
 
