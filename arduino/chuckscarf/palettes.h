@@ -190,17 +190,14 @@ DEFINE_GRADIENT_PALETTE( bhw4_018_gp ) {
 
 // for effects that are palette based
 CRGBPalette16 palettes[] = {
-  //Disorient_gp,
-  es_pinksplash_07_gp,
-  //es_pinksplash_08_gp,
   PuRd_08_gp,
   Lucy_in_the_Sky_gp,
-  //Oranges_06_gp,
+  Oranges_06_gp,
   bhw4_018_gp,
   bhw4_035_gp,
   bhw4_026_gp,
-  bhw4_040_gp,
-  bhw4_098_gp,
+  //bhw4_040_gp,
+  //bhw4_098_gp,
   bhw4_058_gp,
   bhw2_sherbet2_gp,
 };
