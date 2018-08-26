@@ -1,4 +1,6 @@
-#include "OctoWS2811.h"
+#define NUM_LEDS_PER_STRIP 120
+#define NUM_OUTPUTS 4
+#define NUM_LEDS 480
 #include "FastLED.h"
 #include "palettes.h"
 #include "structs.h"
@@ -15,7 +17,7 @@ typedef void (*FP)(CRGB*, DeckSettings*);
 #define qsuba(x, b)  ((x>b)?x-b:0)                            // Analog Unsigned subtraction macro. if result <0, then => 0
 
 
-#define NUM_LEDS 120
+
 #define LEDS_PIN_1 3
 #define LEDS_PIN_2 4
 #define LEDS_PIN_3 5
@@ -37,9 +39,9 @@ typedef void (*FP)(CRGB*, DeckSettings*);
 #define VJ_DECK_SWITCH_INTERVAL_MS 15000
 
 /* crossfading global state */
-CRGB masterOutput[NUM_LEDS];
-CRGB deckA[NUM_LEDS];
-CRGB deckB[NUM_LEDS];
+CRGB masterOutput[NUM_LEDS*NUM_OUTPUTS];
+CRGB deckA[NUM_LEDS*NUM_OUTPUTS];
+CRGB deckB[NUM_LEDS*NUM_OUTPUTS];
 float crossfadePosition = 1.0;  // 0.0 is deckA, 1.0 is deckB
 int crossfadeDirection = (crossfadePosition == 1.0) ? -1 : 1; // start going B -> A
 uint8_t crossfadeInProgress = 0;
@@ -103,7 +105,10 @@ void setup() {
   randomPalette(&deckSettingsB, &deckSettingsA);
 
   // led controller, data pin, clock pin, RGB type (RGB is already defined in particle)
-  FastLED.addLeds<LED_TYPE, LEDS_PIN_1>(masterOutput, NUM_LEDS);
+  FastLED.addLeds<LED_TYPE, LEDS_PIN_1>(masterOutput, 0, NUM_LEDS);
+  FastLED.addLeds<LED_TYPE, LEDS_PIN_2>(masterOutput,1*NUM_LEDS, NUM_LEDS);
+  FastLED.addLeds<LED_TYPE, LEDS_PIN_3>(masterOutput,2*NUM_LEDS, NUM_LEDS);
+  FastLED.addLeds<LED_TYPE, LEDS_PIN_4>(masterOutput,3*NUM_LEDS, NUM_LEDS);
 
   FastLED.setBrightness(GLOBAL_BRIGHTNESS);
   pattern_clear(masterOutput);
