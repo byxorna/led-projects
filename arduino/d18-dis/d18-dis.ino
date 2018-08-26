@@ -4,7 +4,7 @@
 #include "FastLED.h"
 #include "palettes.h"
 #include "structs.h"
-
+uint32_t frame = 0;
 
 DeckSettings deckSettingsA;
 DeckSettings deckSettingsB;
@@ -22,11 +22,11 @@ typedef void (*EffectFunction)(CRGB*);
 #define LEDS_PIN_3 7
 #define LEDS_PIN_4 8
 #define LED_TYPE NEOPIXEL
-#define UPDATES_PER_SECOND 60
+#define UPDATES_PER_SECOND 120
 #define MAX_SATURATION 255
-#define BOOTUP_ANIM_DURATION_MS 5000
-#define PATTERN_CHANGE_INTERVAL_MS 30000
-#define PALETTE_CHANGE_INTERVAL_MS 30000
+#define BOOTUP_ANIM_DURATION_MS 1
+#define PATTERN_CHANGE_INTERVAL_MS 10000
+#define PALETTE_CHANGE_INTERVAL_MS 10000
 #define AUTO_CHANGE_PALETTE 1
 #define AUTO_PATTERN_CHANGE true
 #define GLOBAL_BRIGHTNESS 255
@@ -71,10 +71,20 @@ void randomPalette(DeckSettings* deck, DeckSettings* otherDeck) {
   deck->currentPalette = palettes[deck->palette];
   deck->tPaletteStart = t_now;
 }
-
+// Random buffer
+uint8_t randomBuffer[NUM_LEDS] = {0};
+// New random seed based on analogRead0 and analogRead1
+void setupRandomSeed() {
+  uint32_t r0 = analogRead(0) + analogRead(1) + 1;
+  uint32_t r1 = 0;
+  for (uint32_t i = 0; i < r0; i++) {
+    r1 += analogRead(0) + analogRead(1) + analogRead(2);
+  }
+  randomSeed(r1);
+}
 // setup() runs once, when the device is first turned on.
 void setup() {
-  randomSeed(analogRead(0));
+  setupRandomSeed();
   t_now = millis();
   t_boot = t_now;
   tLastCrossfade = t_now;
@@ -126,8 +136,15 @@ void setup() {
 
 
 void loop() {
+  ++frame;
   t_now = millis();
 
+   // Fill randomBuffer with noise
+   if (!(t_now % 4)) {
+     for (int i = 0; i < NUM_LEDS; ++i) {
+       randomBuffer[i] = random(256);
+     }
+   }
   // increment pattern every PATTERN_CHANGE_INTERVAL_MS, but not when a deck is active!
   if (AUTO_PATTERN_CHANGE) {
     if (t_now > deckSettingsA.tPatternStart + PATTERN_CHANGE_INTERVAL_MS && !crossfadeInProgress) {
@@ -197,13 +214,14 @@ void loop() {
   for (int i = 0; i < NUM_LEDS; ++i) {
     
     masterOutput[i] = deckA[i].lerp8(deckB[i], fract8(255 * crossfadePosition));
-    
     if (t_now < + BOOTUP_ANIM_DURATION_MS) {
       // ramp intensity up slowly, so we fade in when turning on
       int8_t bri8 = (uint8_t)((t_now * 1.0) / BOOTUP_ANIM_DURATION_MS * 255.0);
       masterOutput[i] = masterOutput[i].fadeToBlackBy(255 - bri8);
     }
   }
+
+  glitch(masterOutput);
 
   FastLED.setBrightness(GLOBAL_BRIGHTNESS);
   FastLED.show();

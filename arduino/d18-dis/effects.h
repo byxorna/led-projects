@@ -1,3 +1,67 @@
+bool isGlitching = false;
+uint32_t nextGlitch = random(100);
+int glitchFrames = random(1, 6);
+int glitchStrip = random(200);
+// User defined variables
+CRGB colorOrange = CRGB(255, 48, 0);
+CRGB colorMagenta = CRGB(255, 0, 92);
+CRGB colorBlack = CRGB(0, 0, 0);
+CRGB colorWhite = CRGB(255, 255, 255);
+CRGB colorPink = CRGB(128, 0, 64);
+CRGB colorCyan = CRGB(0, 255, 255);
+CRGB colorYellow = CRGB(255, 255, 128);
+CRGB palette[] = {colorBlack, colorOrange, colorPink, colorWhite, colorMagenta, colorCyan, colorYellow};
+void resetGlitch() {
+  nextGlitch = frame + random(1, 60);
+  glitchFrames = random(1, 10);
+  isGlitching = false;
+  glitchStrip = random(NUM_OUTPUTS);
+}
+CRGB shiftColor(CRGB c, int shift) {
+  return CRGB(c.r >> shift, c.g >> shift, c.b >> shift);
+}
+// Random strip flicker
+void glitch(CRGB* leds) {
+  if (frame >= nextGlitch) {
+    isGlitching = true;
+  }
+  if (random(6) == 0) {
+  for (int i = 0; i < NUM_LEDS; ++i) {
+        if (random(70) == 0) {
+          leds[i] = colorWhite;
+        }
+      }
+  }
+  if (isGlitching) {
+    int shift = random(4);
+    if (frame >= nextGlitch && frame < nextGlitch + glitchFrames) {
+      int start = random(NUM_LEDS);
+      int nFlicker = random(100);
+      if (start + nFlicker > NUM_LEDS) {
+        nFlicker = NUM_LEDS-(start+nFlicker);
+      }
+      for (int i = start; i < start + nFlicker; ++i) {
+        int index = i % NUM_LEDS;
+        if (leds[index]) { // TODO: is this loop not active
+          CRGB thisColor = colorWhite;
+
+          if (random(100) < 40) {
+            thisColor = colorYellow;
+          } else {
+            thisColor = shiftColor(thisColor, shift);
+          }
+          leds[index] = thisColor;
+        }
+      }
+    } else {
+      if (frame >= nextGlitch + glitchFrames) {
+        resetGlitch();
+      }
+    }
+  }
+}
+
+
 /*vars for pattern_phase_shift_palette*/
 int wave1 = 0;
 void pattern_phase_shift_palette(CRGB* leds, DeckSettings* s) {
