@@ -141,17 +141,67 @@ DEFINE_GRADIENT_PALETTE( bhw2_sherbet2_gp ) {
   232, 252,199, 88,
   255, 206,115, 52};
 
+// Gradient palette "bhw4_026_gp", originally from
+// http://soliton.vm.bytemark.co.uk/pub/cpt-city/bhw/bhw4/tn/bhw4_026.png.index.html
+// converted for FastLED with gammas (2.6, 2.2, 2.5)
+// Size: 44 bytes of program space.
+
+DEFINE_GRADIENT_PALETTE( bhw4_026_gp ) {
+    0, 194,144,145,
+   17, 234, 32, 37,
+   43, 165,118,168,
+   73, 190,  7,  4,
+   96, 217, 33, 13,
+  119, 244, 54,  3,
+  137, 229,207,  2,
+  175, 197, 41, 61,
+  193, 165,118,168,
+  211, 234, 32, 37,
+  255, 227,125,147};
+
+  // Gradient palette "bhw4_098_gp", originally from
+// http://soliton.vm.bytemark.co.uk/pub/cpt-city/bhw/bhw4/tn/bhw4_098.png.index.html
+// converted for FastLED with gammas (2.6, 2.2, 2.5)
+// Size: 32 bytes of program space.
+
+DEFINE_GRADIENT_PALETTE( bhw4_098_gp ) {
+    0, 128, 33, 52,
+   35, 255, 17, 47,
+   58, 222,  2, 51,
+   99, 144, 56, 78,
+  124, 188,115,137,
+  178, 255, 16, 52,
+  219, 199,  1,  4,
+  255, 106,  1,  2};
+
+    // Gradient palette "bhw4_058_gp", originally from
+// http://soliton.vm.bytemark.co.uk/pub/cpt-city/bhw/bhw4/tn/bhw4_058.png.index.html
+// converted for FastLED with gammas (2.6, 2.2, 2.5)
+// Size: 28 bytes of program space.
+
+DEFINE_GRADIENT_PALETTE( bhw4_058_gp ) {
+    0,  14,  2,  8,
+   51,  16,  5, 26,
+   96, 110, 17, 91,
+  127, 255, 35,133,
+  168, 132, 16, 95,
+  204,  83, 18, 80,
+  255,  14,  3, 19};
+
 // for effects that are palette based
 CRGBPalette16 palettes[] = {
-  Lucy_in_the_Sky_gp,
+  bhw4_018_gp, // good. pink orange dark
+  // bhw4_035_gp, // BAD white and some blue.
+  bhw4_026_gp, // good. white orange pink
+  // bhw4_040_gp, // BAD blue, no go
+  bhw4_098_gp, // good pink, white
+  bhw4_058_gp, // good purple blue
+  bhw2_sherbet2_gp, // good, white orange red
+  //Lucy_in_the_Sky_gp,
   bhw1_01_gp,
   bhw3_02_gp,
-  bhw4_018_gp,
-  bhw4_035_gp,
-  bhw4_040_gp,
   bhw2_48_gp,
   bhw2_50_gp,
-  bhw2_sherbet2_gp,
 };
 #define PALETTES_COUNT (sizeof(palettes)/sizeof(*palettes))
 
