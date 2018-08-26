@@ -178,7 +178,8 @@ const FP patternBank[] = {
   &pattern_plasma,
   &pattern_from_palette,
   &pattern_phase_shift_palette,
-  &pattern_slow_pulse,
+  //&pattern_slow_pulse,
   &pattern_palette_waves,
-  //&pattern_rainbow_waves
+  //&pattern_rainbow_waves,
+ 
 };

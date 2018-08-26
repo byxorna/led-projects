@@ -1,4 +1,22 @@
+/* custom color palettes */
+// orange 255,102,0 FF6600
+// pink 255,0,255 #ff00ff
+// pornj 255,51,51 #ff3333
+DEFINE_GRADIENT_PALETTE( Disorient_gp ) {
+  0,   0,   0,   0,    // black
+  75, 255,  26, 153,    // pink
+  147, 255,  51,  51,    // pornj
+  208, 255, 111,  15,    // orange
+  255, 255, 255, 255,
+}; // white
 
+DEFINE_GRADIENT_PALETTE( es_pinksplash_08_gp ) {
+  0, 126, 11, 255,
+  127, 197,  1, 22,
+  175, 210, 157, 172,
+  221, 157,  3, 112,
+  255, 157,  3, 112
+};
 
 DEFINE_GRADIENT_PALETTE( es_pinksplash_07_gp ) {
   0, 229,  1,  1,
@@ -172,7 +190,12 @@ DEFINE_GRADIENT_PALETTE( bhw4_018_gp ) {
 
 // for effects that are palette based
 CRGBPalette16 palettes[] = {
-  //Lucy_in_the_Sky_gp,
+  //Disorient_gp,
+  es_pinksplash_07_gp,
+  //es_pinksplash_08_gp,
+  PuRd_08_gp,
+  Lucy_in_the_Sky_gp,
+  //Oranges_06_gp,
   bhw4_018_gp,
   bhw4_035_gp,
   bhw4_026_gp,

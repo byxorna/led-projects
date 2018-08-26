@@ -188,20 +188,15 @@ DEFINE_GRADIENT_PALETTE( bhw4_018_gp ) {
 
 
 
+
 // for effects that are palette based
 CRGBPalette16 palettes[] = {
-  //Disorient_gp,
-  es_pinksplash_07_gp,
-  //es_pinksplash_08_gp,
-  PuRd_08_gp,
-  Lucy_in_the_Sky_gp,
-  //Oranges_06_gp,
-  bhw4_018_gp,
-  bhw4_035_gp,
-  bhw4_026_gp,
-  bhw4_040_gp,
-  bhw4_098_gp,
-  bhw4_058_gp,
-  bhw2_sherbet2_gp,
+  bhw4_018_gp, // good. pink orange dark
+  // bhw4_035_gp, // BAD white and some blue.
+  bhw4_026_gp, // good. white orange pink
+  // bhw4_040_gp, // BAD blue, no go
+  bhw4_098_gp, // good pink, white
+  bhw4_058_gp, // good purple blue
+  bhw2_sherbet2_gp, // good, white orange red
 };
 #define PALETTES_COUNT (sizeof(palettes)/sizeof(*palettes))
