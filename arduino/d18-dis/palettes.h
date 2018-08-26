@@ -10,23 +10,33 @@ DEFINE_GRADIENT_PALETTE( Disorient_gp ) {
   255, 255, 255, 255,
 }; // white
 
-DEFINE_GRADIENT_PALETTE( es_pinksplash_08_gp ) {
-  0, 126, 11, 255,
-  127, 197,  1, 22,
-  175, 210, 157, 172,
-  221, 157,  3, 112,
-  255, 157,  3, 112
-};
+// Gradient palette "bhw4_057_gp", originally from
+// http://soliton.vm.bytemark.co.uk/pub/cpt-city/bhw/bhw4/tn/bhw4_057.png.index.html
+// converted for FastLED with gammas (2.6, 2.2, 2.5)
+// Size: 28 bytes of program space.
+// dark purple pink
+DEFINE_GRADIENT_PALETTE( bhw4_057_gp ) {
+    0,   6,  0,  1,
+   22,  17,  0,  1,
+   58,  20,  1,  2,
+   91,  75,  0, 12,
+  127, 199,  1, 41,
+  204,  17,  0,  1,
+  255,   6,  0,  1};
+// Gradient palette "bhw4_058_gp", originally from
+// http://soliton.vm.bytemark.co.uk/pub/cpt-city/bhw/bhw4/tn/bhw4_058.png.index.html
+// converted for FastLED with gammas (2.6, 2.2, 2.5)
+// Size: 28 bytes of program space.
 
-DEFINE_GRADIENT_PALETTE( es_pinksplash_07_gp ) {
-  0, 229,  1,  1,
-  61, 242,  4, 63,
-  101, 255, 12, 255,
-  127, 249, 81, 252,
-  153, 255, 11, 235,
-  193, 244,  5, 68,
-  255, 232,  1,  5
-};
+DEFINE_GRADIENT_PALETTE( bhw4_058_gp ) {
+    0,  14,  2,  8,
+   51,  16,  5, 26,
+   96, 110, 17, 91,
+  127, 255, 35,133,
+  168, 132, 16, 95,
+  204,  83, 18, 80,
+  255,  14,  3, 19};
+
 
 DEFINE_GRADIENT_PALETTE( bhw2_sherbet2_gp ) {
     0, 217,  1,  1,
@@ -190,18 +200,14 @@ DEFINE_GRADIENT_PALETTE( bhw4_018_gp ) {
 
 // for effects that are palette based
 CRGBPalette16 palettes[] = {
-  //Disorient_gp,
-  es_pinksplash_07_gp,
-  //es_pinksplash_08_gp,
-  PuRd_08_gp,
-  Lucy_in_the_Sky_gp,
-  //Oranges_06_gp,
-  bhw4_018_gp,
-  bhw4_035_gp,
-  bhw4_026_gp,
-  bhw4_040_gp,
-  bhw4_098_gp,
-  bhw4_058_gp,
-  bhw2_sherbet2_gp,
+  //bhw4_057_gp, // dark purple pink
+  bhw4_058_gp,bhw4_058_gp,bhw4_058_gp,bhw4_058_gp,
+  /*
+  bhw4_018_gp, // good. pink orange dark
+  bhw4_026_gp, // good. white orange pink
+  bhw4_098_gp, // good pink, white
+  bhw4_058_gp, // good purple blue
+  bhw2_sherbet2_gp, // good, white orange red
+  */
 };
 #define PALETTES_COUNT (sizeof(palettes)/sizeof(*palettes))

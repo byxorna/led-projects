@@ -1,6 +1,6 @@
-#define NUM_LEDS_PER_STRIP 120
+#define NUM_LEDS_PER_STRIP 150
 #define NUM_OUTPUTS 4
-#define NUM_LEDS 480
+#define NUM_LEDS 600
 #include "FastLED.h"
 #include "palettes.h"
 #include "structs.h"
@@ -18,10 +18,10 @@ typedef void (*FP)(CRGB*, DeckSettings*);
 
 
 
-#define LEDS_PIN_1 3
-#define LEDS_PIN_2 4
-#define LEDS_PIN_3 5
-#define LEDS_PIN_4 6
+#define LEDS_PIN_1 2 // 2 14 7 8
+#define LEDS_PIN_2 14
+#define LEDS_PIN_3 7
+#define LEDS_PIN_4 8
 #define LED_TYPE NEOPIXEL
 #define UPDATES_PER_SECOND 60
 #define MAX_SATURATION 255
@@ -39,9 +39,9 @@ typedef void (*FP)(CRGB*, DeckSettings*);
 #define VJ_DECK_SWITCH_INTERVAL_MS 15000
 
 /* crossfading global state */
-CRGB masterOutput[NUM_LEDS*NUM_OUTPUTS];
-CRGB deckA[NUM_LEDS*NUM_OUTPUTS];
-CRGB deckB[NUM_LEDS*NUM_OUTPUTS];
+CRGB masterOutput[NUM_LEDS];
+CRGB deckA[NUM_LEDS];
+CRGB deckB[NUM_LEDS];
 float crossfadePosition = 1.0;  // 0.0 is deckA, 1.0 is deckB
 int crossfadeDirection = (crossfadePosition == 1.0) ? -1 : 1; // start going B -> A
 uint8_t crossfadeInProgress = 0;
@@ -75,6 +75,7 @@ void randomPalette(DeckSettings* deck, DeckSettings* otherDeck) {
 
 // setup() runs once, when the device is first turned on.
 void setup() {
+  randomSeed(analogRead(0));
   t_now = millis();
   t_boot = t_now;
   tLastCrossfade = t_now;
@@ -104,12 +105,17 @@ void setup() {
   randomPattern(&deckSettingsB, &deckSettingsA);
   randomPalette(&deckSettingsB, &deckSettingsA);
 
-  // led controller, data pin, clock pin, RGB type (RGB is already defined in particle)
-  FastLED.addLeds<LED_TYPE, LEDS_PIN_1>(masterOutput, 0, NUM_LEDS);
-  FastLED.addLeds<LED_TYPE, LEDS_PIN_2>(masterOutput,1*NUM_LEDS, NUM_LEDS);
-  FastLED.addLeds<LED_TYPE, LEDS_PIN_3>(masterOutput,2*NUM_LEDS, NUM_LEDS);
-  FastLED.addLeds<LED_TYPE, LEDS_PIN_4>(masterOutput,3*NUM_LEDS, NUM_LEDS);
 
+  FastLED.addLeds<LED_TYPE, LEDS_PIN_1>(masterOutput, 0, NUM_LEDS_PER_STRIP);
+  FastLED.addLeds<LED_TYPE, LEDS_PIN_2>(masterOutput, 1*NUM_LEDS_PER_STRIP, NUM_LEDS_PER_STRIP);
+  FastLED.addLeds<LED_TYPE, LEDS_PIN_3>(masterOutput, 2*NUM_LEDS_PER_STRIP, NUM_LEDS_PER_STRIP);
+  FastLED.addLeds<LED_TYPE, LEDS_PIN_4>(masterOutput, 3*NUM_LEDS_PER_STRIP, NUM_LEDS_PER_STRIP);
+   /* 
+  FastLED.addLeds<LED_TYPE, LEDS_PIN_1>(masterOutput1, NUM_LEDS_PER_STRIP);
+  FastLED.addLeds<LED_TYPE, LEDS_PIN_2>(masterOutput2, NUM_LEDS_PER_STRIP);
+  FastLED.addLeds<LED_TYPE, LEDS_PIN_3>(masterOutput3, NUM_LEDS_PER_STRIP);
+  FastLED.addLeds<LED_TYPE, LEDS_PIN_4>(masterOutput4, NUM_LEDS_PER_STRIP);
+*/
   FastLED.setBrightness(GLOBAL_BRIGHTNESS);
   pattern_clear(masterOutput);
   pattern_clear(deckA);
@@ -150,14 +156,7 @@ void loop() {
     }
   }
 
-  //if (t_boot + BOOTUP_ANIM_DURATION_MS > t_now) {
-  //  // display a bootup pattern for a bit
-  //  pattern_bootup(deckA, &deckSettingsA);
-  //  for (int i = 0; i < NUM_LEDS; ++i) {
-  //    deckB[i] = deckA[i];
-  //  }
-  //} else {
-  // fill in patterns on both decks! we will crossfade master output later
+  
   // NOTE: only render to a deck if its "visible" through the crossfader
   if ( !VJ_CROSSFADING_ENABLED || crossfadePosition < 1.0 ) {
     patternBank[deckSettingsA.pattern](deckA, &deckSettingsA);
@@ -165,7 +164,6 @@ void loop() {
   if ( VJ_CROSSFADING_ENABLED && crossfadePosition > 0 ) {
     patternBank[deckSettingsB.pattern](deckB, &deckSettingsB);
   }
-  //}
 
   // perform crossfading increment if we are mid pattern change
   if (VJ_CROSSFADING_ENABLED) {
@@ -199,11 +197,9 @@ void loop() {
   // perform crossfading between deckA and deckB, by filling masterOutput
   // FIXME for now, lets just take a linear interpolation between deck a and b
   for (int i = 0; i < NUM_LEDS; ++i) {
-    if (VJ_CROSSFADING_ENABLED) {
-      masterOutput[i] = deckA[i].lerp8(deckB[i], fract8(255 * crossfadePosition));
-    } else {
-      masterOutput[i] = deckA[i];
-    }
+    
+    masterOutput[i] = deckA[i].lerp8(deckB[i], fract8(255 * crossfadePosition));
+    
     if (t_now < + BOOTUP_ANIM_DURATION_MS) {
       // ramp intensity up slowly, so we fade in when turning on
       int8_t bri8 = (uint8_t)((t_now * 1.0) / BOOTUP_ANIM_DURATION_MS * 255.0);

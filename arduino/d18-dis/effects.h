@@ -123,7 +123,7 @@ void pattern_brake_light(CRGB* leds, DeckSettings* s) {
 // This function draws color waves with an ever-changing,
 // widely-varying set of parameters, using a color palette.
 void pattern_palette_waves(CRGB* leds, DeckSettings* s) {
-  uint8_t numleds = NUM_LEDS;
+  int numleds = NUM_LEDS;
   static uint16_t sPseudotime = 0;
   static uint16_t sLastMillis = 0;
   static uint16_t sHue16 = 0;
@@ -176,10 +176,6 @@ void pattern_palette_waves(CRGB* leds, DeckSettings* s) {
 #define NUM_PATTERNS sizeof(patternBank) / sizeof(FP)
 const FP patternBank[] = {
   &pattern_plasma,
-  &pattern_from_palette,
   &pattern_phase_shift_palette,
-  //&pattern_slow_pulse,
   &pattern_palette_waves,
-  //&pattern_rainbow_waves,
- 
 };
