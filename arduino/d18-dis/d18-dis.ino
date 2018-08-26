@@ -11,12 +11,11 @@ DeckSettings deckSettingsB;
 DeckSettings* deckSettingsAll[] = {&deckSettingsA, &deckSettingsB};
 
 typedef void (*FP)(CRGB*, DeckSettings*);
+typedef void (*EffectFunction)(CRGB*);
 
 // Use qsuba for smooth pixel colouring and qsubd for non-smooth pixel colouring
 #define qsubd(x, b)  ((x>b)?b:0)                              // Digital unsigned subtraction macro. if result <0, then => 0. Otherwise, take on fixed value.
 #define qsuba(x, b)  ((x>b)?x-b:0)                            // Analog Unsigned subtraction macro. if result <0, then => 0
-
-
 
 #define LEDS_PIN_1 2 // 2 14 7 8
 #define LEDS_PIN_2 14
@@ -167,7 +166,6 @@ void loop() {
 
   // perform crossfading increment if we are mid pattern change
   if (VJ_CROSSFADING_ENABLED) {
-    //Serial.printf("%d %d %d\n", t_now, tLastCrossfade + VJ_DECK_SWITCH_INTERVAL_MS, crossfadeInProgress);
     if (t_now > tLastCrossfade + VJ_DECK_SWITCH_INTERVAL_MS && !crossfadeInProgress) {
       // start switching between decks
       crossfadeInProgress = 1;

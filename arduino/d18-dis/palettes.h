@@ -23,19 +23,20 @@ DEFINE_GRADIENT_PALETTE( bhw4_057_gp ) {
   127, 199,  1, 41,
   204,  17,  0,  1,
   255,   6,  0,  1};
-// Gradient palette "bhw4_058_gp", originally from
-// http://soliton.vm.bytemark.co.uk/pub/cpt-city/bhw/bhw4/tn/bhw4_058.png.index.html
-// converted for FastLED with gammas (2.6, 2.2, 2.5)
-// Size: 28 bytes of program space.
 
-DEFINE_GRADIENT_PALETTE( bhw4_058_gp ) {
-    0,  14,  2,  8,
-   51,  16,  5, 26,
-   96, 110, 17, 91,
-  127, 255, 35,133,
-  168, 132, 16, 95,
-  204,  83, 18, 80,
-  255,  14,  3, 19};
+// Gradient palette "bhw2_24_gp", originally from
+// http://soliton.vm.bytemark.co.uk/pub/cpt-city/bhw/bhw2/tn/bhw2_24.png.index.html
+// converted for FastLED with gammas (2.6, 2.2, 2.5)
+// Size: 24 bytes of program space.
+
+DEFINE_GRADIENT_PALETTE( bhw2_24_gp ) {
+    0,  35, 11,  7,
+   71, 107,  1, 23,
+  119, 192, 44, 80,
+  127, 192, 44, 80,
+  188, 107,  1, 23,
+  255,  35, 11,  7};
+
 
 
 DEFINE_GRADIENT_PALETTE( bhw2_sherbet2_gp ) {
@@ -200,13 +201,14 @@ DEFINE_GRADIENT_PALETTE( bhw4_018_gp ) {
 
 // for effects that are palette based
 CRGBPalette16 palettes[] = {
-  //bhw4_057_gp, // dark purple pink
-  bhw4_058_gp,bhw4_058_gp,bhw4_058_gp,bhw4_058_gp,
+  bhw4_057_gp, // dark purple pink
+  bhw4_058_gp, // purple brighter
+  bhw2_24_gp, // pink purple
+  bhw4_018_gp, // good. pink orange dark
   /*
   bhw4_018_gp, // good. pink orange dark
   bhw4_026_gp, // good. white orange pink
   bhw4_098_gp, // good pink, white
-  bhw4_058_gp, // good purple blue
   bhw2_sherbet2_gp, // good, white orange red
   */
 };

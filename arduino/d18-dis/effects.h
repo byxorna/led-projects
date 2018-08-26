@@ -45,29 +45,6 @@ void pattern_slow_pulse(CRGB* leds, DeckSettings* s) {
   }
 }
 
-void pattern_cylon_eye(CRGB* leds, DeckSettings* s) {
-  // cylon eye is 4 pixels wide, +/++ base index
-  // we map a 60bpm(1s) cycle into 0..num leds-1
-  uint8_t h = beatsin8(8, 0, 255);
-  CHSV hsv_led = CHSV(h, 255, 255);
-  CRGB rgb_led;
-  hsv2rgb_rainbow(hsv_led, rgb_led);
-  uint8_t mappedIndex = beatsin8(60, 0, NUM_LEDS - 1);
-  for (int i = 0; i < NUM_LEDS; ++i) {
-    if (mappedIndex == i) {
-      leds[i] = rgb_led;
-    } else if (addmod8(mappedIndex, 1, 255) == i) {
-      leds[i] = rgb_led;
-    } else if (addmod8(mappedIndex, 2, 255) == i) {
-      leds[i] = rgb_led;
-    } else if (addmod8(mappedIndex, 3, 255) == i) {
-      leds[i] = rgb_led;
-    } else {
-      leds[i] = CRGB::Black;
-    }
-  }
-}
-
 void pattern_bootup(CRGB* leds, DeckSettings* s) {
   // ramp intensity up as we boot up. act like we are warming up
   float intensity = (t_now / BOOTUP_ANIM_DURATION_MS) * 255.0;
@@ -113,9 +90,21 @@ void pattern_from_palette(CRGB* leds, DeckSettings* s) {
   }
 }
 
-void pattern_brake_light(CRGB* leds, DeckSettings* s) {
-  for (int i = 0; i < NUM_LEDS; ++i) {
-    leds[i] = CRGB::Red;
+void effect_reverse(CRGB* leds) {
+  CRGB temp;
+  for (int i = 0; i < NUM_LEDS/2; ++i) {
+    temp = leds[i];
+    leds[i] = leds[NUM_LEDS-i];
+    leds[NUM_LEDS-i] = temp;
+  }
+}
+
+void effect_sparkle(CRGB* leds) {
+  CRGB temp;
+  for (int i = 0; i < NUM_LEDS/2; ++i) {
+    temp = leds[i];
+    leds[i] = leds[NUM_LEDS-i];
+    leds[NUM_LEDS-i] = temp;
   }
 }
 
@@ -178,4 +167,9 @@ const FP patternBank[] = {
   &pattern_plasma,
   &pattern_phase_shift_palette,
   &pattern_palette_waves,
+};
+#define NUM_EFFECTS sizeof(effectBank) / sizeof(EffectFunction)
+const EffectFunction effectBank[] = {
+  &effect_reverse,
+  //&effect_sparkle,
 };
