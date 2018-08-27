@@ -5,8 +5,11 @@ int glitchStrip = random(200);
 
 unsigned long dropTime = 0;
 int dropMask[NUM_LEDS] = {0};
-unsigned long swapTime = 0;
-int swapMask[NUM_LEDS] = {0};
+unsigned long lookaheadTime = 0;
+int lookaheadMask[NUM_LEDS] = {0};
+int lookaheadOffset = 0;
+unsigned long reverseTime = 0;
+int reverseMask[NUM_LEDS] = {0};
 
 // User defined variables
 CRGB colorOrange = CRGB(255, 48, 0);
@@ -63,35 +66,67 @@ void glitch(CRGB* leds) {
     }
   }
 
-    // color swap
-  if (random(15)==0 && (t_now > swapTime)) {
+  // color seek ahead
+  if (random(15)==0 && (t_now > lookaheadTime)) {
     // define our mask
     // blank out the mask
     for (int i = 0; i < NUM_LEDS; ++i) {
-      swapMask[i] = 0;
+      lookaheadMask[i] = 0;
     }
-    swapTime = t_now + random(1000);
+    lookaheadTime = t_now + random(1000);
+    lookaheadOffset = random(200);
     int n = random(7);
     for (int k = 0; k < n; ++k) {
       int length = random(100);
       int start = random(NUM_LEDS);
       for (int x = start; x < start+length; ++x) {
         if (x>NUM_LEDS){
-          swapMask[NUM_LEDS%x] = 1;
+          lookaheadMask[NUM_LEDS%x] = 1;
         } else {
-          swapMask[x] = 1;
+          lookaheadMask[x] = 1;
         }
       }
     }
   }
-  if (t_now < swapTime) {
+  if (t_now < lookaheadTime) {
     CRGB temp;
-    int offset = 80;
     for (int i = 0; i < NUM_LEDS; ++i) {
-      if (swapMask[i] == 1) {
-        temp = leds[i%NUM_LEDS];
-        leds[i] = leds[(i+offset)%NUM_LEDS];
-        leds[(i+offset)%NUM_LEDS] = temp;
+      if (lookaheadMask[i] == 1) {
+        temp = leds[i];
+        leds[i] = leds[(i+lookaheadOffset)%NUM_LEDS];
+        leds[(i+lookaheadOffset)%NUM_LEDS] = temp;
+      }
+    }
+  }
+
+  // reverse
+  if (random(10)==0 && (t_now > reverseTime)) {
+    // define our mask
+    // blank out the mask
+    for (int i = 0; i < NUM_LEDS; ++i) {
+      reverseMask[i] = 0;
+    }
+    reverseTime = t_now + random(5000);
+    int n = random(7);
+    for (int k = 0; k < n; ++k) {
+      int length = random(100);
+      int start = random(NUM_LEDS);
+      for (int x = start; x < start+length; ++x) {
+        if (x>NUM_LEDS){
+          reverseMask[NUM_LEDS%x] = 1;
+        } else {
+          reverseMask[x] = 1;
+        }
+      }
+    }
+  }
+  if (t_now < reverseTime) {
+    CRGB temp;
+    for (int i = 0; i < NUM_LEDS; ++i) {
+      if (reverseMask[i] == 1) {
+        temp = leds[i];
+        leds[i] = leds[NUM_LEDS-i];
+        leds[NUM_LEDS-i] = temp;
       }
     }
   }
