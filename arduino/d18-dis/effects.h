@@ -171,6 +171,21 @@ void glitch(CRGB* leds) {
   
 }
 
+void filterColors(CRGB* leds) {
+  // perform channel filtering to pull down G+B if the color
+  // isnt near white
+  for (int i = 0; i < NUM_LEDS; ++i) {
+    if (masterOutput[i].r < 200 && masterOutput[i].g < 200 && masterOutput[i].b < 200) {
+      if (masterOutput[i].g > 40) {
+        masterOutput[i].g = 0;
+      }
+      if (masterOutput[i].b > 128) {
+        masterOutput[i].b = 0;
+      }
+    }
+  }
+}
+
 
 /*vars for pattern_phase_shift_palette*/
 int wave1 = 0;
