@@ -2,6 +2,12 @@ bool isGlitching = false;
 uint32_t nextGlitch = random(100);
 int glitchFrames = random(1, 6);
 int glitchStrip = random(200);
+
+unsigned long dropTime = 0;
+int dropMask[NUM_LEDS] = {0};
+unsigned long swapTime = 0;
+int swapMask[NUM_LEDS] = {0};
+
 // User defined variables
 CRGB colorOrange = CRGB(255, 48, 0);
 CRGB colorMagenta = CRGB(255, 0, 92);
@@ -12,6 +18,7 @@ CRGB colorCyan = CRGB(0, 255, 255);
 CRGB colorYellow = CRGB(255, 255, 128);
 CRGB palette[] = {colorBlack, colorOrange, colorPink, colorWhite, colorMagenta, colorCyan, colorYellow};
 void resetGlitch() {
+  
   nextGlitch = frame + random(1, 60);
   glitchFrames = random(1, 10);
   isGlitching = false;
@@ -25,13 +32,80 @@ void glitch(CRGB* leds) {
   if (frame >= nextGlitch) {
     isGlitching = true;
   }
+
+
+  // color drop out, if we arent dropping colors
+  if (random(15) == 0 && (t_now > dropTime)) {
+    // define our mask
+    // blank out the mask
+    for (int i = 0; i < NUM_LEDS; ++i) {
+      dropMask[i] = 0;
+    }
+    dropTime = t_now + random(1000);
+    int n = random(20);
+    for (int k = 0; k < n; ++k) {
+      int length = random(50);
+      int start = random(NUM_LEDS);
+      for (int x = start; x < start+length; ++x) {
+        if (x>NUM_LEDS){
+          dropMask[NUM_LEDS%x] = 1;
+        } else {
+          dropMask[x] = 1;
+        }
+      }
+    }
+  }
+  if (t_now < dropTime) {
+    for (int i = 0; i < NUM_LEDS; ++i) {
+      if (dropMask[i] == 1) {
+        leds[i] = CRGB::Black;
+      }
+    }
+  }
+
+    // color swap
+  if (random(15)==0 && (t_now > swapTime)) {
+    // define our mask
+    // blank out the mask
+    for (int i = 0; i < NUM_LEDS; ++i) {
+      swapMask[i] = 0;
+    }
+    swapTime = t_now + random(1000);
+    int n = random(7);
+    for (int k = 0; k < n; ++k) {
+      int length = random(100);
+      int start = random(NUM_LEDS);
+      for (int x = start; x < start+length; ++x) {
+        if (x>NUM_LEDS){
+          swapMask[NUM_LEDS%x] = 1;
+        } else {
+          swapMask[x] = 1;
+        }
+      }
+    }
+  }
+  if (t_now < swapTime) {
+    CRGB temp;
+    int offset = 80;
+    for (int i = 0; i < NUM_LEDS; ++i) {
+      if (swapMask[i] == 1) {
+        temp = leds[i%NUM_LEDS];
+        leds[i] = leds[(i+offset)%NUM_LEDS];
+        leds[(i+offset)%NUM_LEDS] = temp;
+      }
+    }
+  }
+
+  // sparkle
   if (random(6) == 0) {
-  for (int i = 0; i < NUM_LEDS; ++i) {
+    for (int i = 0; i < NUM_LEDS; ++i) {
         if (random(70) == 0) {
           leds[i] = colorWhite;
         }
       }
   }
+  
+  // glitch strips sometimes
   if (isGlitching) {
     int shift = random(4);
     if (frame >= nextGlitch && frame < nextGlitch + glitchFrames) {
@@ -59,6 +133,7 @@ void glitch(CRGB* leds) {
       }
     }
   }
+  
 }
 
 

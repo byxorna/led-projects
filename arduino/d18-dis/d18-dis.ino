@@ -219,6 +219,12 @@ void loop() {
       int8_t bri8 = (uint8_t)((t_now * 1.0) / BOOTUP_ANIM_DURATION_MS * 255.0);
       masterOutput[i] = masterOutput[i].fadeToBlackBy(255 - bri8);
     }
+    if (masterOutput[i].g > 40) {
+      masterOutput[i].g = 0;
+    }
+    if (masterOutput[i].b > 128) {
+      masterOutput[i].b = 0;
+    }
   }
 
   glitch(masterOutput);
