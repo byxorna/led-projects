@@ -8,7 +8,7 @@
 // Use qsuba for smooth pixel colouring and qsubd for non-smooth pixel colouring
 #define qsubd(x, b)  ((x>b)?b:0)
 #define qsuba(x, b)  ((x>b)?x-b:0)
-#define NUM_LEDS 102
+#define NUM_LEDS 200
 #define LEDS_PIN D6
 #define LED_TYPE NSFastLED::NEOPIXEL
 #define UPDATES_PER_SECOND 120
@@ -164,11 +164,11 @@ void pattern_slow_pulse_with_sparkles(Deck* s) {
   NSFastLED::CRGB rgb_led;
   hsv2rgb_rainbow(hsv_led, rgb_led);
   for( int i = 0; i < NUM_LEDS; i++) {
-    if (random(NUM_LEDS*3) == 0) {
-      s->leds[i] = NSFastLED::CRGB::White;
-    } else {
+    //if (random(NUM_LEDS*3) == 0) {
+    //  s->leds[i] = NSFastLED::CRGB::White;
+    //} else {
       s->leds[i] = rgb_led;
-    }
+    //}
   }
 }
 
@@ -210,15 +210,15 @@ void  pattern_plasma(Deck* s) {
 // cycle a rainbow, varying how quickly it rolls around the board
 void pattern_rainbow_waves_with_sparkles(Deck* s) {
   for(int i = 0; i < NUM_LEDS; ++i) {
-    if (random(NUM_LEDS*3) == 0) {
-      s->leds[i] = NSFastLED::CRGB::White;
-    } else {
+    //if (random(NUM_LEDS*3) == 0) {
+    //  s->leds[i] = NSFastLED::CRGB::White;
+    //} else {
       uint8_t h = (t_now/12+i)%256;
       NSFastLED::CHSV hsv_led = NSFastLED::CHSV(h, 255, 255);
       NSFastLED::CRGB rgb_led;
       hsv2rgb_rainbow(hsv_led, rgb_led);
       s->leds[i] = rgb_led;
-    }
+    //}
   }
 }
 
@@ -231,11 +231,11 @@ void pattern_clear(Deck* s) {
 void pattern_disorient_palette_sparkles(Deck* s) {
   uint8_t b = NSFastLED::beatsin8(4, 0, 255);
   for( int i = 0; i < NUM_LEDS; i++) {
-    if (random(NUM_LEDS*4) == 0) {
-      s->leds[i] = NSFastLED::CRGB::White;
-    } else {
+    //if (random(NUM_LEDS*4) == 0) {
+    //  s->leds[i] = NSFastLED::CRGB::White;
+    //} else {
       s->leds[i] = ColorFromPalette((NSFastLED::CRGBPalette16)Disorient_gp, s->animationIndex + i + b, MAX_BRIGHTNESS, currentBlending);
-    }
+    //}
   }
   // slow down progression by 1/3
   if (t_now%3 == 0) {
