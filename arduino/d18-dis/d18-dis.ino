@@ -2,6 +2,7 @@
 #define NUM_OUTPUTS 4
 #define NUM_LEDS 600
 #include "FastLED.h"
+FASTLED_USING_NAMESPACE;
 #include "palettes.h"
 #include "structs.h"
 uint32_t frame = 0;
