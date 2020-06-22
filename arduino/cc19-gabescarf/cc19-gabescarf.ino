@@ -118,7 +118,7 @@ void pattern_clear(Deck* s) {
 // This function draws color waves with an ever-changing,
 // widely-varying set of parameters, using a color palette.
 void pattern_palette_waves(Deck* s) {
-  uint8_t numleds = NUM_LEDS;
+  int numleds = NUM_LEDS;
   static uint16_t sPseudotime = 0;
   static uint16_t sLastMillis = 0;
   static uint16_t sHue16 = 0;
@@ -330,15 +330,7 @@ void setup() {
   randomEffect(&DeckB);
 
   // led controller, data pin, clock pin, RGB type (RGB is already defined in particle)
-  /*
-  gLED = new CFastLED();
-  gLED->addLeds<LED_TYPE, LEDS_PIN>(MasterOutput.leds, NUM_LEDS);
-  gLED->setBrightness(GLOBAL_BRIGHTNESS);
-  pattern_clear(&DeckA);
-  pattern_clear(&DeckB);
-  gLED->show();
-  */
-
+  
   FastLED.addLeds<LED_TYPE, LEDS_PIN>(MasterOutput.leds, NUM_LEDS);
   FastLED.setBrightness(GLOBAL_BRIGHTNESS);
   pattern_clear(&MasterOutput);
