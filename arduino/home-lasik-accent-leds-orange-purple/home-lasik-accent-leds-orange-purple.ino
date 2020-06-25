@@ -1,4 +1,6 @@
-
+/* Project: home-lasik-accent-leds-orange-purple.ino
+* More Info: https://www.youtube.com/watch?v=L3_vNGUauho
+*/
 #include "FastLED.h"
 #include "palettes.h"
 #include "structs.h"
