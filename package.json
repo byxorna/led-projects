@@ -4,8 +4,10 @@
   "description": "LED projects",
   "author": "Gabe Conradi <gabe.conradi@gmail.com>",
   "license": "APL2.0",
+  "type": "module",
   "dependencies": {
+    "@romellogoodman/flow-field": "^0.0.3",
     "global": "^4.3.2",
-    "particle-cli": "^1.25.0"
+    "particle-cli": "^2.16.0"
   }
 }
